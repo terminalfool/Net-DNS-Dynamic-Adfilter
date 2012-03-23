@@ -1,8 +1,7 @@
-pod2text Net::DNS::Dynamic::Adfilter.pm > README
-
 A pure Perl nameserver for the purpose of filtering advertising. Loads ad domains 
 from pgl.yoyo.org/adservers/. This module is experimental and currently works only 
-on OSX 10.5+ machines due to system calls to ''networksetup''.
+on OSX 10.5+ machines due to system calls to ''networksetup''. These calls modify 
+dns settings on the wireless interface. 
 
 Also see sample interface script scripts/adfilter.pl
 
@@ -13,4 +12,6 @@ make
 sudo make test
 sudo make install
 
-Use: sudo perl adfilter.pl -bg
+Run:
+
+sudo perl scripts/adfilter.pl -bg
