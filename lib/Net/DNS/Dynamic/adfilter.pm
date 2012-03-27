@@ -126,13 +126,16 @@ sub parse_hosts {
 
 	return unless $self->ask_adhosts;
 
-	$self->log("refreshing $self->{adhosts} file", 1);
-
 	my %addrs = %{$self->addrs};
 	my %names;
 
-	getstore($self->pgl_url, $self->adhosts);
-  
+	my $age = -M $self->adhosts || 0;
+
+	unless ($age < 7) {
+	        $self->log("refreshing $self->{adhosts} file", 1);
+	        getstore($self->pgl_url, $self->adhosts);
+	}
+
 	foreach my $hostsfile ($self->adhosts, $self->morehosts) {
 
 		if (-e $hostsfile) {
