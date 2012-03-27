@@ -9,7 +9,7 @@ use Carp qw( croak );
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has ask_adhosts=> ( is => 'ro', isa => 'HashRef', required => 0, default => 86400 );
+has ask_adhosts=> ( is => 'ro', isa => 'HashRef', required => 0 );
 has pgl_url=> ( is => 'rw', isa => 'Str', required => 0, default => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext' );
 has adhosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/adhosts' );
 has morehosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/morehosts' );
