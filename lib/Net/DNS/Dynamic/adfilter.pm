@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Moose;
 use LWP::Simple;
@@ -9,165 +9,153 @@ use Carp qw( croak );
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has ask_pgl_hosts=> ( is => 'ro', isa => 'HashRef', required => 0 );
+has ask_adhosts=> ( is => 'ro', isa => 'HashRef', required => 0, default => 86400 );
 has pgl_url=> ( is => 'rw', isa => 'Str', required => 0, default => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext' );
 has adhosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/adhosts' );
+has morehosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/morehosts' );
 
 override 'run' => sub {
 
-  my ( $self ) = shift;
+	my ( $self ) = shift;
 
-  my $sock = IO::Socket::INET->new(
-				PeerAddr=> "example.com",
-                PeerPort=> 80,
-                Proto   => "tcp");
-  my $localip = $sock->sockhost;
+	my $sock = IO::Socket::INET->new(
+		PeerAddr=> "example.com",
+		PeerPort=> 80,
+		Proto   => "tcp");
+	my $localip = $sock->sockhost;
 
-  system('networksetup -setdnsservers "Wi-Fi" 127.0.0.1');
-  system('networksetup -setsearchdomains "Wi-Fi" localhost');
+	system('networksetup -setdnsservers "Wi-Fi" 127.0.0.1');
+	system('networksetup -setsearchdomains "Wi-Fi" localhost');
 
-  $self->log("Nameserver accessible locally @ $localip; localhost now queries itself (dns:127.0.0.1)", 1);
+	$self->log("Nameserver accessible locally @ $localip; localhost now queries (dns:127.0.0.1)", 1);
 
-  $self->nameserver->main_loop;
+	$self->nameserver->main_loop;
 };
 
 override 'reply_handler' => sub {
 
-  my ($self, $qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
+	my ($self, $qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
 
-  my ($rcode, @ans, @auth, @add);
+	my ($rcode, @ans, @auth, @add);
 
-  $self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
+	$self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
 
-  # see if we can answer the question from /etc/hosts
-  #
-  if ($self->ask_etc_hosts && ($qtype eq 'A' || $qtype eq 'PTR')) {
+	# see if we can answer the question from hosts listings
+	#
+	if ($qtype eq 'A' || $qtype eq 'PTR') {
     
-    if (my $ip = $self->query_etc_hosts( $qname, $qtype )) {
+		if (my $ip = $self->query_hosts( $qname, $qtype )) {
 
-      $self->log("[/etc/hosts] resolved $qname to $ip NOERROR");
+			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-      my ($ttl, $rdata) = (($self->ask_etc_hosts->{ttl} ? $self->ask_etc_hosts->{ttl} : 3600), $ip );
+			my ($ttl, $rdata) = (($self->ask_adhosts->{ttl} ? $self->ask_adhosts->{ttl} : 86400), $ip );
         
-      push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
-      $rcode = "NOERROR";
+			$rcode = "NOERROR";
       
-      return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-      }
-    }
+			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
+		}
+	}
 
-  # see if we can answer the question from adhost listing
-  #
-  if ($self->ask_pgl_hosts && ($qtype eq 'A' || $qtype eq 'PTR')) {
+	# see if we can answer the question from the SQL database
+	#
+	if ($self->ask_sql) {
     
-    if (my $ip = $self->query_pgl_hosts( $qname, $qtype )) {
+		if (my $ip = $self->query_sql( $qname, $qtype )) {
+      
+			$self->log("[SQL] resolved $qname to $ip NOERROR");
 
-      $self->log("[$self->{adhosts}] resolved $qname to $ip NOERROR");
-
-      my ($ttl, $rdata) = (($self->ask_pgl_hosts->{ttl} ? $self->ask_pgl_hosts->{ttl} : 3600), $ip );
+			my ($ttl, $rdata) = (($self->ask_sql->{ttl} ? $self->ask_sql->{ttl} : 3600), $ip );
         
-      push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
-      $rcode = "NOERROR";
+			$rcode = "NOERROR";
       
-      return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-      }
+			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
+		}
     }
 
-  # see if we can answer the question from the SQL database
-  #
-  if ($self->ask_sql) {
+	# forward to remote nameserver and loop through the result
+	# 
+	my $answer = $self->resolver->send($qname, $qtype, $qclass);
+
+	if ($answer) {
+
+		$rcode = $answer->header->rcode;
+		@ans   = $answer->answer;
+		@auth  = $answer->authority;
+		@add   = $answer->additional;
     
-    if (my $ip = $self->query_sql( $qname, $qtype )) {
-      
-      $self->log("[SQL] resolved $qname to $ip NOERROR");
+		$self->log("[proxy] response from remote resolver: $qname $rcode");
 
-      my ($ttl, $rdata) = (($self->ask_sql->{ttl} ? $self->ask_sql->{ttl} : 3600), $ip );
-        
-      push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+		return ($rcode, \@ans, \@auth, \@add);
+	}
+	else {
 
-      $rcode = "NOERROR";
-      
-      return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-      }
-    }
+		$self->log("[proxy] can not resolve $qtype $qname - no answer from remote resolver. Sending NXDOMAIN response.");
 
-  # forward to remote nameserver and loop through the result
-  # 
-  my $answer = $self->resolver->send($qname, $qtype, $qclass);
+		$rcode = "NXDOMAIN";
 
-  if ($answer) {
-
-    $rcode = $answer->header->rcode;
-    @ans   = $answer->answer;
-    @auth  = $answer->authority;
-    @add   = $answer->additional;
-    
-    $self->log("[proxy] response from remote resolver: $qname $rcode");
-
-    return ($rcode, \@ans, \@auth, \@add);
-    }
-  else {
-
-    $self->log("[proxy] can not resolve $qtype $qname - no answer from remote resolver. Sending NXDOMAIN response.");
-
-    $rcode = "NXDOMAIN";
-
-    return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-    }
+		return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
+	}
 };
 
 after 'read_config' => sub {
-  my ( $self ) = shift;
-  $self->addrs({ $self->parse_pgl_hosts() });# adhosts
+	my ( $self ) = shift;
+	$self->addrs({ $self->parse_hosts() }); # adhosts, morehosts
 };
 
 before 'signal_handler' => sub {
-  my ( $self ) = shift;
-  system('networksetup -setdnsservers "Wi-Fi" empty');
-  system('networksetup -setsearchdomains "Wi-Fi" empty');
+	my ( $self ) = shift;
+	system('networksetup -setdnsservers "Wi-Fi" empty');
+	system('networksetup -setsearchdomains "Wi-Fi" empty');
 };
 
-sub query_pgl_hosts {
-  my ( $self, $qname, $qtype ) = @_;
+sub query_hosts {
+	my ( $self, $qname, $qtype ) = @_;
 
-  $qname =~ s/^.*\.(\w+\.\w+)$/$1/i;
+	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i;
   
-  return $self->search_ip_by_hostname( $qname ) if $qtype eq 'A';
-  return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
+	return $self->search_ip_by_hostname( $qname ) if $qtype eq 'A';
+	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
 }
 
-sub parse_pgl_hosts {
-  my ( $self ) = shift;
+sub parse_hosts {
+	my ( $self ) = shift;
 
-  return unless $self->ask_pgl_hosts;
+	return unless $self->ask_adhosts;
 
-  $self->log("refreshing $self->{adhosts} file", 1);
+	$self->log("refreshing $self->{adhosts} file", 1);
 
-  my %addrs = %{$self->addrs};
-  my %names;
+	my %addrs = %{$self->addrs};
+	my %names;
 
-  if (is_success(getstore($self->pgl_url, $self->adhosts))) {
+	getstore($self->pgl_url, $self->adhosts);
+  
+	foreach my $hostsfile ($self->adhosts, $self->morehosts) {
 
-  open(HOSTS, $self->adhosts) or croak "cant open $self->{adhosts} file: $!";
+		if (-e $hostsfile) {
+		
+			open(HOSTS, $hostsfile) or croak "cant open $hostsfile file: $!";
 
-  while (<HOSTS>) {
+			while (<HOSTS>) {
     
-    chomp;
-    next if /^\s*#/;# skip comments
-    next if /^$/; # skip empty lines
-    s/\s*#.*$//;# delete in-line comments and preceding whitespace
+				chomp;
+				next if /^\s*#/;# skip comments
+				next if /^$/; # skip empty lines
+				s/\s*#.*$//;# delete in-line comments and preceding whitespace
 
-    $names{$_}++;
-    }
+				$names{$_}++;
+			}
 
-  close(HOSTS);
- }
+			close(HOSTS);
+		}
+	}
 
-  push @{$addrs{'127.0.0.1'}}, $_ foreach (sort(keys %names));
+	push @{$addrs{'127.0.0.1'}}, $_ foreach (keys %names);
 
-  return %addrs;
+	return %addrs;
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -189,6 +177,15 @@ The module can also load and resolve any /etc/hosts definitions that might exist
 Ad domains are written to /var/named/adhosts and are refreshed with each invocation 
 from pgl.yoyo.org/adservers.
 
+An addendum of adhosts is parsed from /var/named/morehosts if found. File should conform 
+to a one host per line format:
+
+#secondary host list
+googlesyndication.com
+facebook.com
+twitter.com
+...
+
 Once running, local net dns queries can be addressed to the host's ip. This ip is 
 echoed to stdout.
 
@@ -196,9 +193,11 @@ echoed to stdout.
 
  my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-     ask_pgl_hosts => { ttl => 3600 },
+     ask_pgl_hosts => { ttl => 86400 },		#default time to live in seconds
+     adhosts => '/var/named/adhosts'    	#default path to pgl hosts
+     morehosts => '/var/named/morehosts'	#default path to secondary hosts
 
-     ask_etc_hosts => { ttl => 3600 },
+     ask_etc_hosts => { ttl => 86400 },	        #if set, parse /etc/hosts as well
 
  );
 

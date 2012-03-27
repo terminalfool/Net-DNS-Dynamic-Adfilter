@@ -5,38 +5,38 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.01;
+use Net::DNS::Dynamic::Adfilter 0.02;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-my $debug 				= 0;
-my $verbose				= 0;
-my $help				= 0;
-my $host 				= undef;
-my $port				= undef;
-my $background			= 0;
-my $ask_etc_hosts		= undef;
-my $ask_pgl_hosts		= 3600;
-my $uid					= undef;
-my $gid					= undef;
-my $nameserver			= undef;
-my $nameserver_port		= 0;
+my $debug 	    = 0;
+my $verbose	    = 0;
+my $help	    = 0;
+my $host 	    = undef;
+my $port	    = undef;
+my $background	    = 0;
+my $ask_etc_hosts   = undef;
+my $ask_adhosts     = 86400;
+my $uid		    = undef;
+my $gid		    = undef;
+my $nameserver	    = undef;
+my $nameserver_port = 0;
 
 GetOptions(
-    'debug|d'			=> \$debug,
-    'verbose|v'			=> \$verbose,
-    'help|?|h'			=> \$help,
-    'host=s'			=> \$host,
-    'port|p=s'			=> \$port,
-    'background|bg'		=> \$background,
-	'etc=s'				=> \$ask_etc_hosts,
-	'pgl=s'				=> \$ask_pgl_hosts,
-	'uid|u=s'			=> \$uid,
-	'gid|g=s'			=> \$gid,
-	'nameserver|ns=s'	=> \$nameserver,
+    'debug|d'	      => \$debug,
+    'verbose|v'	      => \$verbose,
+    'help|?|h'	      => \$help,
+    'host=s'	      => \$host,
+    'port|p=s'	      => \$port,
+    'background|bg'   => \$background,
+    'etc=s'	      => \$ask_etc_hosts,
+    'adhosts=s'	      => \$ask_adhosts,
+    'uid|u=s'	      => \$uid,
+    'gid|g=s'	      => \$gid,
+    'nameserver|ns=s' => \$nameserver,
 );
 
 pod2usage(1) if $help;
@@ -47,15 +47,15 @@ fork && exit if $background;
 
 my $args = {};
 
-$args->{debug}				= ($verbose ? 1 : ($debug ? 3 : 0));
-$args->{host}				= $host if $host;
-$args->{port}				= $port if $port;
-$args->{uid}				= $uid if $uid;
-$args->{gid}				= $gid if $gid;
-$args->{nameservers}		= [ $nameserver ] if $nameserver;
-$args->{nameservers_port} 	= $nameserver_port if $nameserver_port;
-$args->{ask_etc_hosts} 		= { etc => $ask_etc_hosts } if $ask_etc_hosts;
-$args->{ask_pgl_hosts} 		= { pgl => $ask_pgl_hosts } if $ask_pgl_hosts;
+$args->{debug}		  = ($verbose ? 1 : ($debug ? 3 : 0));
+$args->{host}		  = $host if $host;
+$args->{port}		  = $port if $port;
+$args->{uid}	          = $uid if $uid;
+$args->{gid}		  = $gid if $gid;
+$args->{nameservers}	  = [ $nameserver ] if $nameserver;
+$args->{nameservers_port} = $nameserver_port if $nameserver_port;
+$args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
+$args->{ask_adhosts} 	  = { adhosts => $ask_adhosts } if $ask_adhosts;
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -77,7 +77,7 @@ adfilter.pl [options]
    -g  -gid           run with group id
    -bg -background    run the process in the background
        -etc           use /etc/hosts to answer DNS queries with specified ttl (seconds)
-       -pgl           use pgl.yoyo.org host list to answer DNS queries with specified ttl (defaults to 3600 seconds)
+       -adhosts       use local ad host lists to answer DNS queries with specified ttl (defaults to 86400 seconds)
    -ns -nameserver    forward queries to this nameserver (<ip>:<port>)
        
  See also:
