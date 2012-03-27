@@ -171,7 +171,7 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 =head1 DESCRIPTION
 
-This is a pure Perl DNS server intended for use as an ad filter for a local area network. 
+This is a Perl DNS server intended for use as an ad filter for a local area network. 
 The module loads a list of ad domains and resolves DNS queries for those domains to 
 the loopback address 127.0.0.1. The module forwards any other requests downstream 
 to a specified list of nameservers or determines forwarding according to /etc/resolv.conf. 
