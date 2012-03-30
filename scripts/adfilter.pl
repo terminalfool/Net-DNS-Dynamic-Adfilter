@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.02;
+use Net::DNS::Dynamic::Adfilter 0.03;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 my $debug 	    = 0;
 my $verbose	    = 0;
@@ -19,7 +19,7 @@ my $host 	    = undef;
 my $port	    = undef;
 my $background	    = 0;
 my $ask_etc_hosts   = undef;
-my $ask_adhosts     = 86400;
+my $ask_adhosts     = 7;
 my $uid		    = undef;
 my $gid		    = undef;
 my $nameserver	    = undef;
@@ -55,7 +55,7 @@ $args->{gid}		  = $gid if $gid;
 $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
-$args->{ask_adhosts} 	  = { adhosts => $ask_adhosts } if $ask_adhosts;
+$args->{ask_adhosts} 	  = { refresh => $ask_adhosts } if $ask_adhosts;
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -77,7 +77,8 @@ adfilter.pl [options]
    -g  -gid           run with group id
    -bg -background    run the process in the background
        -etc           use /etc/hosts to answer DNS queries with specified ttl (seconds)
-       -adhosts       use local ad host lists to answer DNS queries with specified ttl (defaults to 86400 seconds)
+       -adhosts       use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
+                      refreshes ad hosts from pgl.yoyo.org/adservers if local copy is older than ttl
    -ns -nameserver    forward queries to this nameserver (<ip>:<port>)
        
  See also:

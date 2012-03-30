@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Moose;
 use LWP::Simple;
@@ -48,7 +48,7 @@ override 'reply_handler' => sub {
 
 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-			my ($ttl, $rdata) = (($self->ask_adhosts->{ttl} ? $self->ask_adhosts->{ttl} : 86400), $ip );
+			my ($ttl, $rdata) = ((int($self->ask_adhosts->{refresh}) * 86400), $ip );
         
 			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
@@ -131,7 +131,7 @@ sub parse_hosts {
 
 	my $age = -M $self->adhosts || 0;
 
-	unless ($age < 7) {
+	if ($age < $self->ask_adhosts->{refresh}) {
 	        $self->log("refreshing $self->{adhosts} file", 1);
 	        getstore($self->pgl_url, $self->adhosts);
 	}
@@ -177,8 +177,8 @@ the loopback address 127.0.0.1. The module forwards any other requests downstrea
 to a specified list of nameservers or determines forwarding according to /etc/resolv.conf. 
 The module can also load and resolve any /etc/hosts definitions that might exist. 
 
-Ad domains are written to /var/named/adhosts and are refreshed with each invocation 
-from pgl.yoyo.org/adservers.
+Ad domains are written to /var/named/adhosts and are refreshed periodically from 
+pgl.yoyo.org/adservers.
 
 An addendum of adhosts is parsed from /var/named/morehosts if found. File should conform 
 to a one host per line format:
@@ -196,7 +196,7 @@ echoed to stdout.
 
  my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-     ask_pgl_hosts => { ttl => 86400 },		#default time to live in seconds
+     ask_pgl_hosts => { ttl => 7 },		#default time to live in days
      adhosts => '/var/named/adhosts'    	#default path to pgl hosts
      morehosts => '/var/named/morehosts'	#default path to secondary hosts
 
@@ -223,4 +223,3 @@ This library is free software, you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-

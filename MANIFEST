@@ -2,6 +2,6 @@ MANIFEST
 README
 Changes
 Makefile.PL
-lib/Net/DNS/Dynamic/adfilter.pm
+lib/Net/DNS/Dynamic/Adfilter.pm
 t/001_load.t
 scripts/adfilter.pl

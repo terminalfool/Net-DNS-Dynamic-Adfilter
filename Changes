@@ -3,6 +3,8 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 0.01 Mon Mar 19 13:41:55 2012
     - original version; created by ExtUtils::ModuleMaker 0.51
 
-0.02 3-25-2012
+0.02 Sun Mar 25 2012
     - added parsing of secondary ad hosts file
 
+0.03 Fri Mar 30 03:25:05 EDT 2012
+    - merged ttl with refresh value of pgl adhost list
