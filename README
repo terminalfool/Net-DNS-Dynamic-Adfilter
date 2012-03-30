@@ -27,6 +27,3 @@ Run:
 
 sudo perl scripts/adfilter.pl -bg
                               (bg process -- kill manually)
-
-David Watson
-terminalfool@yahoo.com
