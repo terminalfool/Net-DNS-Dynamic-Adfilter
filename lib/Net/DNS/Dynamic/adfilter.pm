@@ -10,9 +10,9 @@ use Carp qw( croak );
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has ask_adhosts=> ( is => 'ro', isa => 'HashRef', required => 0 );
-has pgl_url=> ( is => 'rw', isa => 'Str', required => 0, default => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext' );
-has adhosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/adhosts' );
-has morehosts=> ( is => 'rw', isa => 'Str', required => 0, default => '/var/named/morehosts' );
+has adhosts_url=> ( is => 'rw', isa => 'Str', required => 0 );
+has adhosts=> ( is => 'rw', isa => 'Str', required => 0 );
+has morehosts=> ( is => 'rw', isa => 'Str', required => 0 );
 
 override 'run' => sub {
 
@@ -131,9 +131,9 @@ sub parse_hosts {
 
 	my $age = -M $self->adhosts || 0;
 
-	if ($age < $self->ask_adhosts->{refresh}) {
+	if ($age > $self->ask_adhosts->{refresh}) {
 	        $self->log("refreshing $self->{adhosts} file", 1);
-	        getstore($self->pgl_url, $self->adhosts);
+	        getstore($self->adhosts_url, $self->adhosts);
 	}
 
 	foreach my $hostsfile ($self->adhosts, $self->morehosts) {
