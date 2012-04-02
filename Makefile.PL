@@ -6,7 +6,7 @@ WriteMakefile(
     VERSION_FROM => 'lib/Net/DNS/Dynamic/Adfilter.pm', # finds \$VERSION
     AUTHOR       => 'David Watson (terminalfool@yahoo.com)',
     ABSTRACT     => 'A DNS ad filter',
-    INST_SCRIPT  => 'script/',
+    INST_SCRIPT  => 'scripts/',
     INSTALLSCRIPT=> '/usr/local/bin',
 
     PREREQ_PM    => {
