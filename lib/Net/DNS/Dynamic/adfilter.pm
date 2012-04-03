@@ -205,34 +205,33 @@ $adfilter->run();
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-	 debug => 1,
+     debug => 1,
 
-	 host => '*',
-	 port => 53,
+     host => '*',
+     port => 53,
 
-	 uid => 65534,
-	 gid => 65534,
-	 nameservers => [ '127.0.0.1', '192.168.1.110' ],
-	 nameservers_port => 53,
+     uid => 65534,
+     gid => 65534,
+     nameservers => [ '127.0.0.1', '192.168.1.110' ],
+     nameservers_port => 53,
 
      ask_adhosts => { 
-                     adhosts_refresh => 7,                    #ttl in days
-                     adhosts_url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
-                     adhosts => '/var/named/adhosts',         #path to ad hosts
-                     morehosts => '/var/named/morehosts',     #path to secondary hosts
-                    },
+        adhosts_refresh => 7,                    #ttl in days
+        adhosts_url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
+        adhosts => '/var/named/adhosts',         #path to ad hosts
+        morehosts => '/var/named/morehosts',     #path to secondary hosts
+     },
                     
-     ask_etc_hosts => { ttl => 86400 },	        #if set, parse /etc/hosts as well w/ttl in seconds
+     ask_etc_hosts => { ttl => 1 },	        #if set, parse /etc/hosts as well; ttl assumes adhosts_refresh value
 
-	ask_sql => {
-		ttl => 60,
+     ask_sql => {
+	ttl => 60,
+	dsn => 'DBI:mysql:database=my_database;host=localhost;port=3306',
+	user => 'my_user',
+	pass => 'my_password',
 
-		dsn => 'DBI:mysql:database=my_database;host=localhost;port=3306',
-		user => 'my_user',
-		pass => 'my_password',
-
-		statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
-	},
+	statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
+     },
 );
 
 $adfilter->run();
