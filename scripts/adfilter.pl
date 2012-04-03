@@ -98,8 +98,11 @@ adfilter.pl [options]
         -morehosts_path   path to optional single column list of adhosts
         -adhosts_refresh  use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
                           refreshes ad hosts using adhosts_url if local copy is older than ttl
-       
- See also:
+
+Accept the defaults and run in background:
+   sudo perl adfilter.pl -bg
+
+See also:
    perldoc Net::DNS::Dynamic::Adfilter
 
 =head1 DESCRIPTION
