@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Moose;
 use LWP::Simple;
@@ -10,9 +10,6 @@ use Carp qw( croak );
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has ask_adhosts=> ( is => 'ro', isa => 'HashRef', required => 0 );
-has adhosts_url=> ( is => 'rw', isa => 'Str', required => 0 );
-has adhosts=> ( is => 'rw', isa => 'Str', required => 0 );
-has morehosts=> ( is => 'rw', isa => 'Str', required => 0 );
 
 override 'run' => sub {
 
@@ -48,7 +45,7 @@ override 'reply_handler' => sub {
 
 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-			my ($ttl, $rdata) = ((int($self->ask_adhosts->{refresh}) * 86400), $ip );
+			my ($ttl, $rdata) = ((int($self->ask_adhosts->{adhosts_refresh}) * 86400), $ip );
         
 			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
@@ -129,14 +126,14 @@ sub parse_hosts {
 	my %addrs = %{$self->addrs};
 	my %names;
 
-	my $age = -M $self->adhosts || 0;
+	my $age = -M $self->ask_adhosts->{adhosts_path} || 0;
 
-	if ($age > $self->ask_adhosts->{refresh}) {
-	        $self->log("refreshing $self->{adhosts} file", 1);
-	        getstore($self->adhosts_url, $self->adhosts);
+	if ($age > $self->ask_adhosts->{adhosts_refresh}) {
+	        $self->log("refreshing $self->ask_adhosts->{adhosts_path} file", 1);
+	        getstore($self->ask_adhosts->{adhosts_url}, $self->ask_adhosts->{adhosts_path});
 	}
 
-	foreach my $hostsfile ($self->adhosts, $self->morehosts) {
+	foreach my $hostsfile ($self->ask_adhosts->{adhosts_path}, $self->ask_adhosts->{morehosts_path}) {
 
 		if (-e $hostsfile) {
 		
@@ -177,35 +174,64 @@ the loopback address 127.0.0.1. The module forwards any other requests downstrea
 to a specified list of nameservers or determines forwarding according to /etc/resolv.conf. 
 The module can also load and resolve any /etc/hosts definitions that might exist. 
 
-Ad domains are written to /var/named/adhosts and are refreshed periodically from 
-pgl.yoyo.org/adservers.
+A dynamic list of ad domains (adhosts) is accessed through a supplied url. An addendum 
+of ad domains (morehosts) may also be specified. Ad host listings must conform to a 
+one host per line format:
 
-An addendum of adhosts is parsed from /var/named/morehosts if found. File should conform 
-to a one host per line format:
-
-#secondary host list
+# ad nauseam
 googlesyndication.com
 facebook.com
 twitter.com
 ...
+adinfinitum.com
 
-Once running, local net dns queries can be addressed to the host's ip. This ip is 
+Once running, local network dns queries can be addressed to the host's ip. This ip is 
 echoed to stdout.
 
 =head1 SYNOPSIS
 
- my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-     ask_pgl_hosts => { ttl => 7 },		#default time to live in days
-     adhosts => '/var/named/adhosts'    	#default path to pgl hosts
-     morehosts => '/var/named/morehosts'	#default path to secondary hosts
+     ask_adhosts => { 
+                     adhosts_refresh => 7,                    #ttl in days
+                     adhosts_url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
+                     adhosts => '/var/named/adhosts',         #path to ad hosts
+                     morehosts => '/var/named/morehosts',     #path to secondary hosts
+                    },
+     );
 
-     ask_etc_hosts => { ttl => 86400 },	        #if set, parse /etc/hosts as well
+$adfilter->run();
 
- );
 
- $adfilter->run();
+my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
+debug => 1,
+
+host => '*',
+port => 53,
+
+uid => 65534,
+gid => 65534,
+nameservers => [ '127.0.0.1', '192.168.1.110' ],
+nameservers_port => 53,
+
+     ask_adhosts => { adhosts_refresh => 7 },		#ttl in days
+     adhosts_path => '/var/named/adhosts',    	
+     morehosts_path => '/var/named/morehosts',	
+     ask_etc_hosts => { ttl => 86400 },	        #if set, parse /etc/hosts as well w/ttl in seconds
+
+ask_sql => {
+ttl => 60,
+
+dsn => 'DBI:mysql:database=my_database;host=localhost;port=3306',
+user => 'my_user',
+pass => 'my_password',
+
+statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
+},
+);
+
+$adfilter->run();
 
 =head1 AUTHOR
 

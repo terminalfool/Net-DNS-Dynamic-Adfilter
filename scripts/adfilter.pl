@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.03;
+use Net::DNS::Dynamic::Adfilter 0.04;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $debug 	    = 0;
 my $verbose	    = 0;
@@ -19,14 +19,15 @@ my $host 	    = undef;
 my $port	    = undef;
 my $background	    = 0;
 my $ask_etc_hosts   = undef;
-my $ask_adhosts     = 7;
-my $adhosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
-my $adhosts_path    = '/var/named/adhosts';
-my $morehosts_path  = '/var/named/morehosts';
 my $uid		    = undef;
 my $gid		    = undef;
 my $nameserver	    = undef;
 my $nameserver_port = 0;
+
+my $adhosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
+my $adhosts_path    = '/var/named/adhosts';
+my $adhosts_refresh = 7;
+my $morehosts_path  = '/var/named/morehosts';
 
 GetOptions(
     'debug|d'	       => \$debug,
@@ -36,12 +37,14 @@ GetOptions(
     'port|p=s'	       => \$port,
     'background|bg'    => \$background,
     'etc=s'	       => \$ask_etc_hosts,
-    'adhosts=s'	       => \$ask_adhosts,
-    'adhosts_url|url=s'=> \$adhosts_url,
-    'morehosts_path=s' => \$morehosts_path,
     'uid|u=s'	       => \$uid,
     'gid|g=s'	       => \$gid,
     'nameserver|ns=s'  => \$nameserver,
+
+    'adhosts_url|url=s'=> \$adhosts_url,
+    'adhosts_path=s'   => \$adhosts_path,
+    'adhosts_refresh=s'=> \$adhosts_refresh,
+    'morehosts_path=s' => \$morehosts_path,
 );
 
 pod2usage(1) if $help;
@@ -60,10 +63,12 @@ $args->{gid}		  = $gid if $gid;
 $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
-$args->{ask_adhosts} 	  = { refresh => $ask_adhosts } if $ask_adhosts;
-$args->{adhosts_url} 	  = $adhosts_url if $adhosts_url;
-$args->{adhosts} 	  = $adhosts_path if $adhosts_path;
-$args->{morehosts}        = $morehosts_path if $morehosts_path;
+
+$args->{ask_adhosts} = { adhosts_url => $adhosts_url, 
+			 adhosts_path => $adhosts_path,
+			 adhosts_refresh => $adhosts_refresh,
+			 morehosts_path => $morehosts_path,
+		       };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -76,21 +81,23 @@ adfilter.pl - A dynamic DNS-based ad filter
 adfilter.pl [options]
 
  Options:
-   -h   -help           display this help
-   -v   -verbose        show server activity
-   -d   -debug          enable debug mode
-        -host           host (defaults to all)
-   -p   -port           port (defaults to 53)
-   -u   -uid            run with user id
-   -g   -gid            run with group id
-   -bg  -background     run the process in the background
-        -etc            use /etc/hosts to answer DNS queries with specified ttl (seconds)
-        -adhosts        use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
-                        refreshes ad hosts from pgl.yoyo.org/adservers if local copy is older than ttl
-   -url -adhosts_url    url to single column adhosts text
-        -adhosts_path   path to local copy of adhosts text
-        -morehosts_path path to optional single column list of adhosts
-   -ns  -nameserver     forward queries to this nameserver (<ip>:<port>)
+   -h   -help             display this help
+   -v   -verbose          show server activity
+   -d   -debug            enable debug mode
+        -host             host (defaults to all)
+   -p   -port             port (defaults to 53)
+   -u   -uid              run with user id
+   -g   -gid              run with group id
+   -bg  -background       run the process in the background
+        -etc              use /etc/hosts to answer DNS queries with specified ttl (seconds)
+   -ns  -nameserver       forward queries to this nameserver (<ip>:<port>)
+
+   -url -adhosts_url      url to single column adhosts text
+                          defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
+        -adhosts_path     path to local copy of adhosts text
+        -morehosts_path   path to optional single column list of adhosts
+        -adhosts_refresh  use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
+                          refreshes ad hosts using adhosts_url if local copy is older than ttl
        
  See also:
    perldoc Net::DNS::Dynamic::Adfilter
@@ -110,4 +117,3 @@ This library is free software. You can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-

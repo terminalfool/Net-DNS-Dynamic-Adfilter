@@ -8,3 +8,7 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 0.03 Fri Mar 30 03:25:05 EDT 2012
     - merged ttl with refresh value of pgl adhost list
+
+0.04 Tue Apr  3 03:08:30 EDT 2012
+    - moved variables into adfilter hashref, moved defaults into script
+
