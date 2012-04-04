@@ -21,10 +21,12 @@ override 'run' => sub {
 		Proto   => "tcp");
 	my $localip = $sock->sockhost;
 
-	system('networksetup -setdnsservers "Wi-Fi" 127.0.0.1');
-	system('networksetup -setsearchdomains "Wi-Fi" localhost');
+#--switch dns settings on mac osx wireless interface--
+	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+#--
 
-	$self->log("Nameserver accessible locally @ $localip; localhost now queries (dns:127.0.0.1)", 1);
+	$self->log("Nameserver accessible locally @ $localip", 1);
 
 	$self->nameserver->main_loop;
 };
@@ -45,7 +47,9 @@ override 'reply_handler' => sub {
 
 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-			my ($ttl, $rdata) = ((int($self->ask_adhosts->{adhosts_refresh}) * 86400), $ip );
+                        my $refresh = $self->ask_adhosts->{adhosts_refresh} || $self->ask_etc_hosts->{ttl} || 7;
+
+			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
         
 			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
@@ -103,16 +107,18 @@ after 'read_config' => sub {
 	$self->addrs({ $self->parse_hosts() }); # adhosts, morehosts
 };
 
+#--restore dns settings on mac osx wireless interface--
 before 'signal_handler' => sub {
 	my ( $self ) = shift;
 	system('networksetup -setdnsservers "Wi-Fi" empty');
 	system('networksetup -setsearchdomains "Wi-Fi" empty');
 };
+#--
 
 sub query_hosts {
 	my ( $self, $qname, $qtype ) = @_;
 
-	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i;
+	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i if $qtype eq 'A';
   
 	return $self->search_ip_by_hostname( $qname ) if $qtype eq 'A';
 	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
@@ -170,20 +176,20 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 This is a Perl DNS server intended for use as an ad filter for a local area network. 
 The module loads a list of ad domains and resolves DNS queries for those domains to 
-the loopback address 127.0.0.1. The module forwards any other requests downstream 
-to a specified list of nameservers or determines forwarding according to /etc/resolv.conf. 
-The module can also load and resolve any /etc/hosts definitions that might exist. 
+the loopback address 127.0.0.1. Any other queries are forwarded downstream to a 
+specified list of nameservers or those defined in /etc/resolv.conf. The module can 
+also load and resolve any /etc/hosts definitions that might exist. 
 
-A dynamic list of ad domains (adhosts) is accessed through a supplied url. An addendum 
-of ad domains (morehosts) may also be specified. Ad host listings must conform to a 
+Ad domains are accessed from pgl.yoyo.org/adservers and are refreshed periodically. 
+A static list of ad domains can also be specified. Ad host listings must conform to a 
 one host per line format:
 
-# ad nauseam
-googlesyndication.com
-facebook.com
-twitter.com
-...
-adinfinitum.com
+  # ad nauseam
+  googlesyndication.com
+  facebook.com
+  twitter.com
+  ...
+  adinfinitum.com
 
 Once running, local network dns queries can be addressed to the host's ip. This ip is 
 echoed to stdout.
@@ -193,48 +199,17 @@ echoed to stdout.
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
      ask_adhosts => { 
-                     adhosts_refresh => 7,                    #ttl in days
+                     adhosts_refresh => 7,                       #ttl in days
                      adhosts_url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
-                     adhosts => '/var/named/adhosts',         #path to ad hosts
-                     morehosts => '/var/named/morehosts',     #path to secondary hosts
+                     adhosts_path => '/var/named/adhosts',       #path to ad hosts
+                     morehosts_path => '/var/named/morehosts',   #path to secondary hosts
                     },
+     ask_etc_hosts => { ttl => 7 },	                         #if set, parse and resolve /etc/hosts as well; ttl in days
      );
 
 $adfilter->run();
 
-
-my $adfilter = Net::DNS::Dynamic::Adfilter->new(
-
-     debug => 1,
-
-     host => '*',
-     port => 53,
-
-     uid => 65534,
-     gid => 65534,
-     nameservers => [ '127.0.0.1', '192.168.1.110' ],
-     nameservers_port => 53,
-
-     ask_adhosts => { 
-        adhosts_refresh => 7,                    #ttl in days
-        adhosts_url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
-        adhosts => '/var/named/adhosts',         #path to ad hosts
-        morehosts => '/var/named/morehosts',     #path to secondary hosts
-     },
-                    
-     ask_etc_hosts => { ttl => 1 },	        #if set, parse /etc/hosts as well; ttl assumes adhosts_refresh value
-
-     ask_sql => {
-	ttl => 60,
-	dsn => 'DBI:mysql:database=my_database;host=localhost;port=3306',
-	user => 'my_user',
-	pass => 'my_password',
-
-	statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
-     },
-);
-
-$adfilter->run();
+This module extends Net::DNS::Dynamic::Proxyserver. See that module's documentation for further options.
 
 =head1 AUTHOR
 
@@ -243,8 +218,6 @@ David Watson <terminalfool@yahoo.com>
 =head1 SEE ALSO
 
 scripts/adfilter.pl in the distribution
-
-Net::DNS::Dynamic::Proxyserver
 
 =head1 COPYRIGHT AND LICENSE
 

@@ -95,7 +95,7 @@ adfilter.pl [options]
    -url -adhosts_url      url to single column adhosts text
                           defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
         -adhosts_path     path to local copy of adhosts text
-        -morehosts_path   path to optional single column list of adhosts
+        -morehosts_path   path to static single column list of adhosts
         -adhosts_refresh  use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
                           refreshes ad hosts using adhosts_url if local copy is older than ttl
 
