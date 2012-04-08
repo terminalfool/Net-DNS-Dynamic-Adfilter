@@ -47,7 +47,7 @@ override 'reply_handler' => sub {
 
 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-                        my $refresh = $self->ask_adhosts->{adhosts_refresh} || $self->ask_etc_hosts->{ttl} || 7;
+                        my $refresh = $self->ask_adhosts->{adhosts_refresh} ? $self->ask_adhosts->{adhosts_refresh} : $self->ask_etc_hosts->{ttl} ? $self->ask_etc_hosts->{ttl} : 7;
 
 			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
         
@@ -128,6 +128,7 @@ sub parse_hosts {
 	my ( $self ) = shift;
 
 	return unless $self->ask_adhosts;
+	return unless $self->ask_adhosts->{adhosts_refresh};
 
 	my %addrs = %{$self->addrs};
 	my %names;
