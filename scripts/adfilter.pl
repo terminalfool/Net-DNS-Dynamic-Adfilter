@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.04;
+use Net::DNS::Dynamic::Adfilter 0.05;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my $debug 	    = 0;
 my $verbose	    = 0;
@@ -64,11 +64,11 @@ $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
 
-$args->{ask_adhosts} = { adhosts_url => $adhosts_url, 
-			 adhosts_path => $adhosts_path,
-			 adhosts_refresh => $adhosts_refresh,
-			 morehosts_path => $morehosts_path,
+$args->{ask_adhosts} = { url => $adhosts_url, 
+			 path => $adhosts_path,
+			 refresh => $adhosts_refresh,
 		       };
+$args->{ask_morehosts} = { path => $morehosts_path };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -95,7 +95,7 @@ adfilter.pl [options]
    -url -adhosts_url      url to single column adhosts text
                           defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
         -adhosts_path     path to local copy of adhosts text
-        -morehosts_path   path to static single column list of adhosts
+        -morehosts_path   path to optional single column list of adhosts
         -adhosts_refresh  use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
                           refreshes ad hosts using adhosts_url if local copy is older than ttl
 

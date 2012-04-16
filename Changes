@@ -12,3 +12,6 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 0.04 Tue Apr  3 03:08:30 EDT 2012
     - moved variables into adfilter hashref, moved defaults into script
 
+0.05 Mon Apr 16 10:51:06 EDT 2012
+    - moved ad hosts into cache hashref, added secondary hosts hashref
+
