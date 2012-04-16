@@ -20,10 +20,10 @@ Installation:
 
 perl Makefile.PL
 make
-sudo make test
+make test
 sudo make install
 
 Run:
 
-sudo perl scripts/adfilter.pl -bg
-                              (bg process -- kill manually)
+sudo perl /usr/local/bin/adfilter.pl -bg
+   (background process -- kill manually)
