@@ -221,14 +221,14 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 =head1 DESCRIPTION
 
-This is a Perl DNS server intended for use as an ad filter for a local area network. 
-The module loads a list of ad domains and resolves DNS queries for those domains to 
-the loopback address 127.0.0.1. The module forwards any other requests downstream 
-to a specified list of nameservers or determines forwarding according to /etc/resolv.conf. 
-The module can also load and resolve any /etc/hosts definitions that might exist. 
+This is a Perl DNS server intended for use as an ad filter for a local area network. Its 
+function is to load lists of ad domains and nullify DNS queries for those domains to the 
+loopback address. Any other DNS queries are proxied upstream, either to a specified list 
+of nameservers or to those listed in /etc/resolv.conf. The module can also load and resolve 
+host definitions found in /etc/hosts as well as hosts defined in a sql database.
 
-A dynamic list of ad domains (adhosts) is accessed through a supplied url. An addendum 
-of ad domains (morehosts) may also be specified. Ad host listings must conform to a 
+For dynamic listings, an externally maintained host list can be loaded periodically through 
+a specified url. An addendum of hosts may also be specified. Host listings must conform to a 
 one host per line format:
 
   # ad nauseam
@@ -243,22 +243,107 @@ echoed to stdout.
 
 =head1 SYNOPSIS
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new(
-
-     ask_adhosts => {
-                     refresh => 7,                     #ttl in days
-                     url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
-                     path => '/var/named/adhosts',     #path to ad hosts
-                    },
-     ask_morehosts => {
-                     path => '/var/named/morehosts',   #path to secondary hosts
-                    },
-     ask_etc_hosts => { ttl => 3600 },	                   #if set, parse and resolve /etc/hosts as well; ttl in seconds
-     );
+my $adfilter = Net::DNS::Dynamic::Adfilter->new();
 
 $adfilter->run();
 
-This module extends Net::DNS::Dynamic::Proxyserver. See that module's documentation for further options.
+=head1 Arguments to new()
+
+=head2 ask_adhosts HashRef
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+
+    ask_adhosts => {
+
+        url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
+        path => '/var/named/adhosts',     #path to ad hosts
+        refresh => 7,                     #ttl in days
+    },
+);
+
+The url above returns a single column list of ad hosts. In the module's current version, this is the 
+only acceptable format. The path argument defines where the module will write a local copy of this list. 
+The refresh value determines what age in days the local copy may be before it is refreshed. This value 
+also determines the lifespan (ttl) of queries based upon this list.
+
+=head2 ask_morehosts HashRef
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+
+    ask_morehosts => {
+        path => '/var/named/morehosts',  #path to secondary hosts
+    },
+);
+
+The path argument defines where the module will access an addendum of hosts to nullify. As above, a single 
+column is the only acceptable format.
+
+=head2 ask_etc_hosts HashRef
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+
+    ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts as well; ttl in seconds
+
+This hashref is legacy to Net::DNS::Dynamic::Proxyserver. Definition of ttl (in seconds) activates 
+parsing of /etc/hosts and resolution of matching queries with a lifespan of ttl.
+
+=head2 ask_sql_hosts HashRef
+
+Also a legacy of Net::DNS::Dynamic::Proxyserver. If defined, the module will query an sql database of 
+hosts, provided the database file can be accessed (read/write) with the defined uid/gid.
+
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
+
+        ask_sql => {
+  	    ttl => 60, 
+	    dsn => 'DBI:mysql:database=db_name;host=localhost;port=3306',
+	    user => 'my_user',
+	    pass => 'my_password',
+	    statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
+        },
+        uid => 65534,
+        gid => 65534,
+);
+
+The 'statement' is a SELECT statement, which must return the IP address for the given query name 
+(qname) and query type (qtype, like 'A' or 'MX'). The placeholders {qname} and {qtype} will be 
+replaced by the actual query name and type. Your statement must return the IP address as the 
+first column in the result.
+
+=head2 debug Int
+
+The debug option logs actions to stdout and may be set from 1-3 with increasing 
+verbosity: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
+and (3) resolver logging.
+
+=head2 host String
+
+The IP address to bind to. If not defined, the server binds to all (*).
+
+=head2 port Int
+
+The tcp & udp port to run the DNS server under. Default is port 53, which means
+that you need to start your script as user root (all ports below 1000 need root
+rights).
+
+=head2 uid Int
+
+The optional user id to switch to after the socket has been created. Could be set to
+the uid of 'nobody' (65534 on some systems).
+
+=head2 gid Int
+
+The optional group id to switch to after the socket has been created. Could be set to
+the gid of 'nogroup' (65534 on some systems).
+
+=head2 nameservers ArrayRef
+
+Define one or more nameservers to forward any DNS queries to that can't be 
+answered locally. Defaults to nameservers listed in /etc/resolv.conf.
+
+=head2 nameservers_port Int
+
+Specify the port of the remote nameservers. Defaults to the standard port 53.
 
 =head1 AUTHOR
 
@@ -267,6 +352,9 @@ David Watson <terminalfool@yahoo.com>
 =head1 SEE ALSO
 
 scripts/adfilter.pl in the distribution
+
+This module extends Net::DNS::Dynamic::Proxyserver. See that module's documentation for 
+further interface details.
 
 =head1 COPYRIGHT AND LICENSE
 
