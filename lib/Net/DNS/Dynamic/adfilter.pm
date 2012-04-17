@@ -283,6 +283,7 @@ column is the only acceptable format.
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
     ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
+);
 
 This hashref is legacy to Net::DNS::Dynamic::Proxyserver. Definition of ttl (in seconds) activates 
 parsing of /etc/hosts and resolution of matching queries with a lifespan of ttl.
