@@ -228,8 +228,8 @@ of nameservers or to those listed in /etc/resolv.conf. The module can also load 
 host definitions found in /etc/hosts as well as hosts defined in a sql database.
 
 For dynamic listings, an externally maintained host list can be loaded periodically through 
-a specified url. An addendum of hosts may also be specified. Host listings must conform to a 
-one host per line format:
+a specified url. A local addendum of hosts may also be specified. Host listings must conform 
+to a one host per line format:
 
   # ad nauseam
   googlesyndication.com
