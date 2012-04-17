@@ -282,7 +282,7 @@ column is the only acceptable format.
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts as well; ttl in seconds
+    ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
 
 This hashref is legacy to Net::DNS::Dynamic::Proxyserver. Definition of ttl (in seconds) activates 
 parsing of /etc/hosts and resolution of matching queries with a lifespan of ttl.
@@ -322,24 +322,20 @@ The IP address to bind to. If not defined, the server binds to all (*).
 
 =head2 port Int
 
-The tcp & udp port to run the DNS server under. Default is port 53, which means
-that you need to start your script as user root (all ports below 1000 need root
-rights).
+The tcp & udp port to run the DNS server under. Defaults to 53.
 
 =head2 uid Int
 
-The optional user id to switch to after the socket has been created. Could be set to
-the uid of 'nobody' (65534 on some systems).
+The optional user id to switch to after the socket has been created.
 
 =head2 gid Int
 
-The optional group id to switch to after the socket has been created. Could be set to
-the gid of 'nogroup' (65534 on some systems).
+The optional group id to switch to after the socket has been created.
 
 =head2 nameservers ArrayRef
 
-Define one or more nameservers to forward any DNS queries to that can't be 
-answered locally. Defaults to nameservers listed in /etc/resolv.conf.
+Define one or more nameservers to forward any DNS queries to. Defaults to nameservers 
+listed in /etc/resolv.conf.
 
 =head2 nameservers_port Int
 
