@@ -133,17 +133,26 @@ override 'reply_handler' => sub {
 after 'read_config' => sub {
 	my ( $self ) = shift;
 
-	return unless $self->ask_adhosts;
-
-	$self->ask_adhosts->{cache} = { $self->parse_pgl_hosts() }; # pgl.yoyo.org hosts
-	$self->ask_morehosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
-	%{ $self->{cache} } = ( %{ $self->ask_adhosts->{cache} }, %{ $self->ask_morehosts->{cache} } );
+	if ($self->ask_adhosts) {
+	        $self->ask_adhosts->{cache} = { $self->parse_pgl_hosts() }; # pgl.yoyo.org hosts
+	        %{ $self->{cache} } = %{ $self->ask_adhosts->{cache} };
+	}
+        if ($self->ask_morehosts) {
+	        $self->ask_morehosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
+                if ($self->cache) {
+                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_morehosts->{cache} } );
+		} else {
+  	                %{ $self->{cache} } = %{ $self->ask_morehosts->{cache} };
+	        }
+	}
+#	%{ $self->{cache} } = ( %{ $self->ask_adhosts->{cache} }, %{ $self->ask_morehosts->{cache} } );
+	return;
 };
 
 sub query_cache {
 	my ( $self, $qname, $qtype ) = @_;
 
-	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i;
+	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i if $qtype eq 'A';
 	
 	return $self->search_ip_in_cache( $qname ) if $qtype eq 'A';
 	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
@@ -160,14 +169,17 @@ sub search_ip_in_cache {
 sub parse_pgl_hosts {
 	my ( $self ) = shift;
 
-	return unless $self->ask_adhosts->{refresh};
+#	return unless $self->ask_adhosts->{refresh};
+	return unless $self->ask_adhosts;
 
 	my %cache;
 
 	my $hostsfile = $self->ask_adhosts->{path};
+	my $refresh = $self->ask_adhosts->{refresh} || 7;
 	my $age = -M $hostsfile || 0;
 
-	if ($age > $self->ask_adhosts->{refresh}) {
+
+	if ($age > $refresh) {
 	        $self->log("refreshing pgl hosts: $hostsfile", 1);
 	        getstore($self->ask_adhosts->{url}, $hostsfile);
 	}
