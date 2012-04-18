@@ -10,8 +10,8 @@ use Carp qw( croak );
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has cache=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_adhosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_morehosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has ask_pgl_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has ask_more_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
 
 override 'run' => sub {
 
@@ -75,7 +75,7 @@ override 'reply_handler' => sub {
 
 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-                        my $refresh = $self->ask_adhosts->{adhosts_refresh} || 7;
+                        my $refresh = $self->ask_pgl_hosts->{adhosts_refresh} || 7;
 
 			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
         
@@ -133,19 +133,22 @@ override 'reply_handler' => sub {
 after 'read_config' => sub {
 	my ( $self ) = shift;
 
-	if ($self->ask_adhosts) {
-	        $self->ask_adhosts->{cache} = { $self->parse_pgl_hosts() }; # pgl.yoyo.org hosts
-	        %{ $self->{cache} } = %{ $self->ask_adhosts->{cache} };
-	}
-        if ($self->ask_morehosts) {
-	        $self->ask_morehosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
+	if ($self->ask_pgl_hosts) {
+	        $self->ask_pgl_hosts->{cache} = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
                 if ($self->cache) {
-                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_morehosts->{cache} } );
+                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_pgl_hosts->{cache} } );
 		} else {
-  	                %{ $self->{cache} } = %{ $self->ask_morehosts->{cache} };
+  	                %{ $self->{cache} } = %{ $self->ask_pgl_hosts->{cache} };
 	        }
 	}
-#	%{ $self->{cache} } = ( %{ $self->ask_adhosts->{cache} }, %{ $self->ask_morehosts->{cache} } );
+        if ($self->ask_more_hosts) {
+	        $self->ask_more_hosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
+                if ($self->cache) {
+                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_more_hosts->{cache} } );
+		} else {
+  	                %{ $self->{cache} } = %{ $self->ask_more_hosts->{cache} };
+	        }
+	}
 	return;
 };
 
@@ -162,29 +165,27 @@ sub search_ip_in_cache {
         my ( $self, $hostname ) = @_;
 
         return '::1' if (exists $self->cache->{$hostname});
-#        return '127.0.0.1' if (exists $self->cache->{$hostname});
         return;
 }
 
 sub parse_pgl_hosts {
 	my ( $self ) = shift;
 
-#	return unless $self->ask_adhosts->{refresh};
-	return unless $self->ask_adhosts;
+	return unless $self->ask_pgl_hosts;
 
 	my %cache;
 
-	my $hostsfile = $self->ask_adhosts->{path};
-	my $refresh = $self->ask_adhosts->{refresh} || 7;
-	my $age = -M $hostsfile || 0;
+	my $hostsfile = $self->ask_pgl_hosts->{path} or die "ask_pgl_hosts->{path} is undefined";
+	my $refresh = $self->ask_pgl_hosts->{refresh} || 7;
+	my $age = -M $hostsfile || $refresh;
 
-
-	if ($age > $refresh) {
+	if ($age >= $refresh) {
+        	my $url = $self->ask_pgl_hosts->{url} or die "attempting to refresh $hostsfile failed as ask_pgl_hosts->{url} is undefined";
 	        $self->log("refreshing pgl hosts: $hostsfile", 1);
-	        getstore($self->ask_adhosts->{url}, $hostsfile);
+	        getstore($url, $hostsfile);
 	}
 
-	%cache = $self->parse_single_col_hosts($hostsfile) if -e $hostsfile;
+	%cache = $self->parse_single_col_hosts($hostsfile);
 		
 	return %cache;
 }
@@ -192,13 +193,11 @@ sub parse_pgl_hosts {
 sub parse_more_hosts {
 	my ( $self ) = shift;
 
-	return unless $self->ask_morehosts->{path};
+	my $hostsfile = $self->ask_more_hosts->{path} or die "ask_more_hosts->{path} is undefined";
 
 	my %cache;
 
-	my $hostsfile = $self->ask_morehosts->{path};
-
-	%cache = $self->parse_single_col_hosts($hostsfile) if -e $hostsfile;
+	%cache = $self->parse_single_col_hosts($hostsfile);
 		
 	return %cache;
 }
@@ -208,13 +207,13 @@ sub parse_single_col_hosts {
 
 	my %hosts;
 
-	open(HOSTS, $hostsfile) or croak "cant open $hostsfile file: $!";
+	open(HOSTS, $hostsfile) or die "cant open $hostsfile file: $!";
 
 	while (<HOSTS>) {
 	        chomp;
-		next if /^\s*#/;# skip comments
-		next if /^$/; # skip empty lines
-		s/\s*#.*$//;# delete in-line comments and preceding whitespace
+		next if /^\s*#/; # skip comments
+		next if /^$/;    # skip empty lines
+		s/\s*#.*$//;     # delete in-line comments and preceding whitespace
 		$hosts{$_}++;
 	}
 
@@ -240,7 +239,7 @@ of nameservers or to those listed in /etc/resolv.conf. The module can also load 
 host definitions found in /etc/hosts as well as hosts defined in a sql database.
 
 For dynamic listings, an externally maintained host list can be loaded periodically through 
-a specified url. A local addendum of hosts may also be specified. Host listings must conform 
+a specified url. A local addendum of hosts may also be specified. Ad host listings must conform 
 to a one host per line format:
 
   # ad nauseam
@@ -259,36 +258,39 @@ my $adfilter = Net::DNS::Dynamic::Adfilter->new();
 
 $adfilter->run();
 
+Without any arguments, the module will function simply as a proxy, forwarding all requests 
+upstream to nameservers defined in /etc/resolv.conf.
+
 =head1 Arguments to new()
 
-=head2 ask_adhosts HashRef
+=head2 ask_pgl_hosts HashRef
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_adhosts => {
+    ask_pgl_hosts => {
 
         url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
         path => '/var/named/adhosts',     #path to ad hosts
-        refresh => 7,                     #ttl in days
+        refresh => 7,                     #ttl in days (default = 7)
     },
 );
 
-The url above returns a single column list of ad hosts. In the module's current version, this is the 
+The url above returns a single column list of ad hosts. In the module's current state, this is the 
 only acceptable format. The path argument defines where the module will write a local copy of this list. 
-The refresh value determines what age in days the local copy may be before it is refreshed. This value 
+The refresh value determines what age (in days) the local copy may be before it is refreshed. This value 
 also determines the lifespan (ttl) of queries based upon this list.
 
-=head2 ask_morehosts HashRef
+=head2 ask_more_hosts HashRef
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_morehosts => {
+    ask_more_hosts => {
         path => '/var/named/morehosts',  #path to secondary hosts
     },
 );
 
-The path argument defines where the module will access an addendum of hosts to nullify. As above, a single 
-column is the only acceptable format.
+The path argument defines where the module will access an addendum of ad hosts to nullify. As above, a 
+single column is the only acceptable format.
 
 =head2 ask_etc_hosts HashRef
 
@@ -297,15 +299,17 @@ my $adfilter = Net::DNS::Dynamic::Adfilter->new(
     ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
 );
 
-This hashref is legacy to Net::DNS::Dynamic::Proxyserver. Definition of ttl (in seconds) activates 
-parsing of /etc/hosts and resolution of matching queries with a lifespan of ttl.
+This hashref is part of the parent class Net::DNS::Dynamic::Proxyserver. Definition of ttl 
+(in seconds) activates parsing of /etc/hosts and resolution of matching queries with a 
+lifespan of ttl.
 
 =head2 ask_sql_hosts HashRef
 
-Also a legacy of Net::DNS::Dynamic::Proxyserver. If defined, the module will query an sql database of 
-hosts, provided the database file can be accessed (read/write) with the defined uid/gid.
+Also from the parent module Net::DNS::Dynamic::Proxyserver. If defined, the module will query 
+an sql database of hosts, provided the database file can be accessed (read/write) with the 
+defined uid/gid.
 
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
 
         ask_sql => {
   	    ttl => 60, 
@@ -314,7 +318,7 @@ hosts, provided the database file can be accessed (read/write) with the defined 
 	    pass => 'my_password',
 	    statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
         },
-        uid => 65534,
+        uid => 65534, #only if necessary
         gid => 65534,
 );
 
@@ -329,30 +333,44 @@ The debug option logs actions to stdout and may be set from 1-3 with increasing
 verbosity: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
 and (3) resolver logging.
 
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( debug => 1, );
+
 =head2 host String
 
 The IP address to bind to. If not defined, the server binds to all (*).
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( host => '127.0.0.1', );
 
 =head2 port Int
 
 The tcp & udp port to run the DNS server under. Defaults to 53.
 
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( port => 53, );
+
 =head2 uid Int
 
 The optional user id to switch to after the socket has been created.
 
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( uid => 65534, );
+
 =head2 gid Int
 
 The optional group id to switch to after the socket has been created.
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( gid => 65534, );
 
 =head2 nameservers ArrayRef
 
 Define one or more nameservers to forward any DNS queries to. Defaults to nameservers 
 listed in /etc/resolv.conf.
 
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( nameservers => [ '192.168.2.1', '192.168.2.3' ], );
+
 =head2 nameservers_port Int
 
 Specify the port of the remote nameservers. Defaults to the standard port 53.
+
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( nameservers_port => 53, );
 
 =head1 AUTHOR
 
@@ -362,8 +380,7 @@ David Watson <terminalfool@yahoo.com>
 
 scripts/adfilter.pl in the distribution
 
-This module extends Net::DNS::Dynamic::Proxyserver. See that module's documentation for 
-further interface details.
+Net::DNS::Dynamic::Proxyserver
 
 =head1 COPYRIGHT AND LICENSE
 

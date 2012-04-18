@@ -12,39 +12,39 @@ use Pod::Usage;
 
 our $VERSION = '0.05';
 
-my $debug 	    = 0;
-my $verbose	    = 0;
-my $help	    = 0;
-my $host 	    = undef;
-my $port	    = undef;
-my $background	    = 0;
-my $ask_etc_hosts   = undef;
-my $uid		    = undef;
-my $gid		    = undef;
-my $nameserver	    = undef;
-my $nameserver_port = 0;
+my $debug 	      = 0;
+my $verbose	      = 0;
+my $help	      = 0;
+my $host 	      = undef;
+my $port	      = undef;
+my $background	      = 0;
+my $ask_etc_hosts     = undef;
+my $uid		      = undef;
+my $gid		      = undef;
+my $nameserver	      = undef;
+my $nameserver_port   = 0;
 
-my $adhosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
-my $adhosts_path    = '/var/named/adhosts';
-my $adhosts_refresh = 7;
-my $morehosts_path  = '/var/named/morehosts';
+my $pgl_hosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
+my $pgl_hosts_path    = '/var/named/pglhosts';
+my $pgl_hosts_refresh = 7;
+my $more_hosts_path   = '/var/named/morehosts';
 
 GetOptions(
-    'debug|d'	       => \$debug,
-    'verbose|v'	       => \$verbose,
-    'help|?|h'	       => \$help,
-    'host=s'	       => \$host,
-    'port|p=s'	       => \$port,
-    'background|bg'    => \$background,
-    'etc=s'	       => \$ask_etc_hosts,
-    'uid|u=s'	       => \$uid,
-    'gid|g=s'	       => \$gid,
-    'nameserver|ns=s'  => \$nameserver,
+    'debug|d'	          => \$debug,
+    'verbose|v'	          => \$verbose,
+    'help|?|h'	          => \$help,
+    'host=s'	          => \$host,
+    'port|p=s'	          => \$port,
+    'background|bg'       => \$background,
+    'etc=s'	          => \$ask_etc_hosts,
+    'uid|u=s'	          => \$uid,
+    'gid|g=s'	          => \$gid,
+    'nameserver|ns=s'     => \$nameserver,
 
-    'adhosts_url|url=s'=> \$adhosts_url,
-    'adhosts_path=s'   => \$adhosts_path,
-    'adhosts_refresh=s'=> \$adhosts_refresh,
-    'morehosts_path=s' => \$morehosts_path,
+    'pgl_hosts_url|pgl=s' => \$pgl_hosts_url,
+    'pgl_hosts_path=s'    => \$pgl_hosts_path,
+    'pgl_hosts_refresh=s' => \$pgl_hosts_refresh,
+    'more_hosts_path=s'   => \$more_hosts_path,
 );
 
 pod2usage(1) if $help;
@@ -64,11 +64,12 @@ $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
 
-$args->{ask_adhosts} = { url => $adhosts_url, 
-			 path => $adhosts_path,
-			 refresh => $adhosts_refresh,
-		       };
-$args->{ask_morehosts} = { path => $morehosts_path };
+$args->{ask_pgl_hosts} = { url => $pgl_hosts_url, 
+			   path => $pgl_hosts_path,
+			   refresh => $pgl_hosts_refresh,
+		         };
+
+$args->{ask_more_hosts} = { path => $more_hosts_path };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -81,23 +82,23 @@ adfilter.pl - A dynamic DNS-based ad filter
 adfilter.pl [options]
 
  Options:
-   -h   -help             display this help
-   -v   -verbose          show server activity
-   -d   -debug            enable debug mode
-        -host             host (defaults to all)
-   -p   -port             port (defaults to 53)
-   -u   -uid              run with user id
-   -g   -gid              run with group id
-   -bg  -background       run the process in the background
-        -etc              use /etc/hosts to answer DNS queries with specified ttl (seconds)
-   -ns  -nameserver       forward queries to this nameserver (<ip>:<port>)
+   -h   -help              display this help
+   -v   -verbose           show server activity
+   -d   -debug             enable debug mode
+        -host              host (defaults to all)
+   -p   -port              port (defaults to 53)
+   -u   -uid               run with user id
+   -g   -gid               run with group id
+   -bg  -background        run the process in the background
+        -etc               use /etc/hosts to answer DNS queries with specified ttl (seconds)
+   -ns  -nameserver        forward queries to this nameserver (<ip>:<port>)
 
-   -url -adhosts_url      url to single column adhosts text
-                          defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
-        -adhosts_path     path to local copy of adhosts text
-        -morehosts_path   path to optional single column list of adhosts
-        -adhosts_refresh  use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
-                          refreshes ad hosts using adhosts_url if local copy is older than ttl
+   -pgl -pgl_hosts_url     url to single column adhosts text
+                           defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
+        -pgl_hosts_path    path to local copy of adhosts text
+        -more_hosts_path   path to optional single column list of adhosts
+        -pgl_hosts_refresh use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
+                           refreshes pgl hosts using pgl_hosts_url if local copy is older than ttl
 
 Accept the defaults and run in background:
    sudo perl adfilter.pl -bg
