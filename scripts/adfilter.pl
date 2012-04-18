@@ -101,7 +101,7 @@ adfilter.pl [options]
                            refreshes pgl hosts using pgl_hosts_url if local copy is older than ttl
 
 Accept the defaults and run in background:
-   sudo perl adfilter.pl -bg
+   sudo perl adfilter.pl -bg              # you must manually kill this process
 
 See also:
    perldoc Net::DNS::Dynamic::Adfilter
