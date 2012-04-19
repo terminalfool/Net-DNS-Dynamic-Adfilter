@@ -5,7 +5,6 @@ our $VERSION = '0.05';
 use Moose;
 use LWP::Simple;
 use IO::Socket::INET;
-use Carp qw( croak );
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
@@ -333,44 +332,30 @@ The debug option logs actions to stdout and may be set from 1-3 with increasing
 verbosity: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
 and (3) resolver logging.
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( debug => 1, );
-
 =head2 host String
 
 The IP address to bind to. If not defined, the server binds to all (*).
-
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( host => '127.0.0.1', );
 
 =head2 port Int
 
 The tcp & udp port to run the DNS server under. Defaults to 53.
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( port => 53, );
-
 =head2 uid Int
 
 The optional user id to switch to after the socket has been created.
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( uid => 65534, );
-
 =head2 gid Int
 
 The optional group id to switch to after the socket has been created.
-
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( gid => 65534, );
 
 =head2 nameservers ArrayRef
 
 Define one or more nameservers to forward any DNS queries to. Defaults to nameservers 
 listed in /etc/resolv.conf.
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( nameservers => [ '192.168.2.1', '192.168.2.3' ], );
-
 =head2 nameservers_port Int
 
 Specify the port of the remote nameservers. Defaults to the standard port 53.
-
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( nameservers_port => 53, );
 
 =head1 AUTHOR
 
