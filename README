@@ -7,14 +7,6 @@ upstream, either to a specified list of nameservers or to those listed in
 /etc/resolv.conf. The module can also load and resolve host definitions found 
 in /etc/hosts as well as hosts defined in a sql database.
 
-For dynamic listings, an externally maintained host list can be loaded 
-periodically through a specified url. A local addendum of hosts may also be 
-specified.
-
-The module is under development and currently works only on OSX 10.5+ machines 
-due to system calls to ''networksetup''. These calls modify dns settings on the 
-wireless interface. 
-
 See sample interface script scripts/adfilter.pl
 
 Installation:

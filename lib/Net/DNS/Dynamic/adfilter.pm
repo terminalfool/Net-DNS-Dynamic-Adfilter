@@ -23,8 +23,8 @@ override 'run' => sub {
 	my $localip = $sock->sockhost;
 
 #--switch dns settings on mac osx, wireless interface
-	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
-	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -33,11 +33,11 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-before 'signal_handler' => sub {
-	my ( $self ) = shift;
-	system('networksetup -setdnsservers "Wi-Fi" empty');
-	system('networksetup -setsearchdomains "Wi-Fi" empty');
-};
+#before 'signal_handler' => sub {
+#	my ( $self ) = shift;
+#	system('networksetup -setdnsservers "Wi-Fi" empty');
+#	system('networksetup -setsearchdomains "Wi-Fi" empty');
+#};
 #--
 
 override 'reply_handler' => sub {
@@ -371,5 +371,7 @@ Net::DNS::Dynamic::Proxyserver
 
 This library is free software, you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
+The full text of the license can be found in the LICENSE file included with this module.
 
 =cut
