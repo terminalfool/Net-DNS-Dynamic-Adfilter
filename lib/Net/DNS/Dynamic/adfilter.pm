@@ -8,7 +8,7 @@ use IO::Socket::INET;
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has cache=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has adfilter=> ( is => 'rw', isa => 'HashRef', required => 0 );
 has ask_pgl_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
 has ask_more_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
 
@@ -23,8 +23,8 @@ override 'run' => sub {
 	my $localip = $sock->sockhost;
 
 #--switch dns settings on mac osx, wireless interface
-#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
-#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -33,100 +33,42 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-#before 'signal_handler' => sub {
-#	my ( $self ) = shift;
-#	system('networksetup -setdnsservers "Wi-Fi" empty');
-#	system('networksetup -setsearchdomains "Wi-Fi" empty');
-#};
+before 'signal_handler' => sub {
+	my ( $self ) = shift;
+	system('networksetup -setdnsservers "Wi-Fi" empty');
+	system('networksetup -setsearchdomains "Wi-Fi" empty');
+};
 #--
 
-override 'reply_handler' => sub {
+around 'reply_handler' => sub {
 
-	my ($self, $qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
+        my $orig = shift;
+        my $self = shift;
+        my ($qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
 
-	my ($rcode, @ans, @auth, @add);
+        my ($rcode, @ans, @auth, @add);
 
-	$self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
-
-	# see if we can answer the question from /etc/hosts
-	#
-	if ($self->ask_etc_hosts && ($qtype eq 'A' || $qtype eq 'PTR')) {
-	
-		if (my $ip = $self->query_etc_hosts( $qname, $qtype )) {
-
-			$self->log("[/etc/hosts] resolved $qname to $ip NOERROR");
-
-			my ($ttl, $rdata) = (($self->ask_etc_hosts->{ttl} ? $self->ask_etc_hosts->{ttl} : 3600), $ip );
-        
-			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
-
-			$rcode = "NOERROR";
-			
-			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-		}
-	}
-
-	# see if we can answer the question from hosts listings
-	#
-	if ($self->cache && ($qtype eq 'A' || $qtype eq 'PTR')) {
+ 	# see if we can answer the question from hosts listings
+ 	#
+ 	if ($self->adfilter && ($qtype eq 'A' || $qtype eq 'PTR')) {
     
-		if (my $ip = $self->query_cache( $qname, $qtype )) {
+ 		if (my $ip = $self->query_adfilter( $qname, $qtype )) {
 
-			$self->log("[local host listings] resolved $qname to $ip NOERROR");
+                 	$self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
+ 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
                         my $refresh = $self->ask_pgl_hosts->{adhosts_refresh} || 7;
 
-			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
+ 			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
         
-			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+ 			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
-			$rcode = "NOERROR";
+ 			$rcode = "NOERROR";
       
-			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-		}
-	}
-
-	# see if we can answer the question from the SQL database
-	#
-	if ($self->ask_sql) {
-    
-		if (my $ip = $self->query_sql( $qname, $qtype )) {
-      
-			$self->log("[SQL] resolved $qname to $ip NOERROR");
-
-			my ($ttl, $rdata) = (($self->ask_sql->{ttl} ? $self->ask_sql->{ttl} : 3600), $ip );
-        
-			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
-
-			$rcode = "NOERROR";
-      
-			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-		}
-    }
-
-	# forward to remote nameserver and loop through the result
-	# 
-	my $answer = $self->resolver->send($qname, $qtype, $qclass);
-
-	if ($answer) {
-
-		$rcode = $answer->header->rcode;
-		@ans   = $answer->answer;
-		@auth  = $answer->authority;
-		@add   = $answer->additional;
-    
-		$self->log("[proxy] response from remote resolver: $qname $rcode");
-
-		return ($rcode, \@ans, \@auth, \@add);
-	}
-	else {
-
-		$self->log("[proxy] can not resolve $qtype $qname - no answer from remote resolver. Sending NXDOMAIN response.");
-
-		$rcode = "NXDOMAIN";
-
-		return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
-	}
+ 			return ($rcode, \@ans, \@auth, \@add, { aa => 1, ra => 1 });
+ 		}
+ 	}
+	return $self->$orig(@_);
 };
 
 after 'read_config' => sub {
@@ -134,36 +76,36 @@ after 'read_config' => sub {
 
 	if ($self->ask_pgl_hosts) {
 	        $self->ask_pgl_hosts->{cache} = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
-                if ($self->cache) {
-                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_pgl_hosts->{cache} } );
+                if ($self->adfilter) {
+                        %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_pgl_hosts->{cache} } );
 		} else {
-  	                %{ $self->{cache} } = %{ $self->ask_pgl_hosts->{cache} };
+  	                %{ $self->{adfilter} } = %{ $self->ask_pgl_hosts->{cache} };
 	        }
 	}
         if ($self->ask_more_hosts) {
 	        $self->ask_more_hosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
-                if ($self->cache) {
-                        %{ $self->{cache} } = ( %{ $self->{cache} }, %{ $self->ask_more_hosts->{cache} } );
+                if ($self->adfilter) {
+                        %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_more_hosts->{cache} } );
 		} else {
-  	                %{ $self->{cache} } = %{ $self->ask_more_hosts->{cache} };
+  	                %{ $self->{adfilter} } = %{ $self->ask_more_hosts->{cache} };
 	        }
 	}
 	return;
 };
 
-sub query_cache {
+sub query_adfilter {
 	my ( $self, $qname, $qtype ) = @_;
 
-	$qname =~ s/^.*\.(\w+\.\w+)$/$1/i if $qtype eq 'A';
+	$qname =~ s/^.*\.(\w+\.\w+)$/$1/ if $qtype eq 'A';
 	
-	return $self->search_ip_in_cache( $qname ) if $qtype eq 'A';
+	return $self->search_ip_in_adfilter( $qname ) if $qtype eq 'A';
 	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
 }
 
-sub search_ip_in_cache {
+sub search_ip_in_adfilter {
         my ( $self, $hostname ) = @_;
 
-        return '::1' if (exists $self->cache->{$hostname});
+        return '::1' if (exists $self->adfilter->{$hostname});
         return;
 }
 
@@ -231,15 +173,16 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 =head1 DESCRIPTION
 
-This is a Perl DNS server intended for use as an ad filter for a local area network. Its 
-function is to load lists of ad domains and nullify DNS queries for those domains to the 
-loopback address. Any other DNS queries are proxied upstream, either to a specified list 
-of nameservers or to those listed in /etc/resolv.conf. The module can also load and resolve 
-host definitions found in /etc/hosts as well as hosts defined in a sql database.
+This is a DNS server intended for use as an ad filter for a local area network. 
+Its function is to load lists of ad domains and nullify DNS queries for those 
+domains to the loopback address. Any other DNS queries are proxied upstream, 
+either to a specified list of nameservers or to those listed in /etc/resolv.conf. 
+The module can also load and resolve host definitions found in /etc/hosts as 
+well as hosts defined in a sql database.
 
-For dynamic listings, an externally maintained host list can be loaded periodically through 
-a specified url. A local addendum of hosts may also be specified. Ad host listings must conform 
-to a one host per line format:
+Externally maintained lists of ad hosts may be loaded periodically through a 
+specified url. A local addendum of hosts may also be specified. Ad host listings 
+must conform to a one host per line format:
 
   # ad nauseam
   googlesyndication.com
@@ -291,6 +234,8 @@ my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 The path argument defines where the module will access an addendum of ad hosts to nullify. As above, a 
 single column is the only acceptable format.
 
+=head1 Legacy arguments
+
 =head2 ask_etc_hosts HashRef
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
@@ -304,9 +249,8 @@ lifespan of ttl.
 
 =head2 ask_sql_hosts HashRef
 
-Also from the parent module Net::DNS::Dynamic::Proxyserver. If defined, the module will query 
-an sql database of hosts, provided the database file can be accessed (read/write) with the 
-defined uid/gid.
+If defined, the module will query an sql database of hosts, provided the database file can be 
+accessed (read/write) with the defined uid/gid.
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
 
@@ -359,7 +303,7 @@ Specify the port of the remote nameservers. Defaults to the standard port 53.
 
 =head1 AUTHOR
 
-David Watson <terminalfool@yahoo.com>
+David Watson <dwatson@cpan.org>
 
 =head1 SEE ALSO
 
