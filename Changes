@@ -15,3 +15,8 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 0.05 Mon Apr 16 10:51:06 EDT 2012
     - moved ad hosts into cache hashref, added secondary hosts hashref
 
+0.05_01 Wed Apr 18 14:00:35 EDT 2012
+    - bundled initial cpan release
+
+0.06 Mon Apr 23 21:27:44 EDT 2012
+    - changed reply_handler to 'around' modifier

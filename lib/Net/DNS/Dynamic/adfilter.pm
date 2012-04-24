@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Moose;
 use LWP::Simple;
@@ -72,25 +72,25 @@ around 'reply_handler' => sub {
 };
 
 after 'read_config' => sub {
-	my ( $self ) = shift;
+ 	my ( $self ) = shift;
 
-	if ($self->ask_pgl_hosts) {
-	        $self->ask_pgl_hosts->{cache} = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
-                if ($self->adfilter) {
-                        %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_pgl_hosts->{cache} } );
-		} else {
-  	                %{ $self->{adfilter} } = %{ $self->ask_pgl_hosts->{cache} };
-	        }
-	}
-        if ($self->ask_more_hosts) {
-	        $self->ask_more_hosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
-                if ($self->adfilter) {
-                        %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_more_hosts->{cache} } );
-		} else {
-  	                %{ $self->{adfilter} } = %{ $self->ask_more_hosts->{cache} };
-	        }
-	}
-	return;
+ 	if ($self->ask_pgl_hosts) {
+ 	        $self->ask_pgl_hosts->{cache} = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
+                 if ($self->adfilter) {
+                         %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_pgl_hosts->{cache} } );
+ 		} else {
+   	                %{ $self->{adfilter} } = %{ $self->ask_pgl_hosts->{cache} };
+ 	        }
+ 	}
+         if ($self->ask_more_hosts) {
+ 	        $self->ask_more_hosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
+                 if ($self->adfilter) {
+                         %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_more_hosts->{cache} } );
+ 		} else {
+   	                %{ $self->{adfilter} } = %{ $self->ask_more_hosts->{cache} };
+ 	        }
+ 	}
+ 	return;
 };
 
 sub query_adfilter {
@@ -134,7 +134,7 @@ sub parse_pgl_hosts {
 sub parse_more_hosts {
 	my ( $self ) = shift;
 
-	my $hostsfile = $self->ask_more_hosts->{path} or die "ask_more_hosts->{path} is undefined";
+	return unless my $hostsfile = $self->ask_more_hosts->{path};
 
 	my %cache;
 
@@ -180,9 +180,9 @@ either to a specified list of nameservers or to those listed in /etc/resolv.conf
 The module can also load and resolve host definitions found in /etc/hosts as 
 well as hosts defined in a sql database.
 
-Externally maintained lists of ad hosts may be loaded periodically through a 
-specified url. A local addendum of hosts may also be specified. Ad host listings 
-must conform to a one host per line format:
+Externally maintained lists of ad hosts may be loaded periodically through a specified 
+url. A local addendum of hosts may also be specified. Ad host listings must conform 
+to a one host per line format:
 
   # ad nauseam
   googlesyndication.com
@@ -203,9 +203,9 @@ $adfilter->run();
 Without any arguments, the module will function simply as a proxy, forwarding all requests 
 upstream to nameservers defined in /etc/resolv.conf.
 
-=head1 Arguments to new()
+=head1 ATTRIBUTES
 
-=head2 ask_pgl_hosts HashRef
+=head2 ask_pgl_hosts
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
@@ -222,7 +222,7 @@ only acceptable format. The path argument defines where the module will write a 
 The refresh value determines what age (in days) the local copy may be before it is refreshed. This value 
 also determines the lifespan (ttl) of queries based upon this list.
 
-=head2 ask_more_hosts HashRef
+=head2 ask_more_hosts
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
@@ -234,9 +234,9 @@ my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 The path argument defines where the module will access an addendum of ad hosts to nullify. As above, a 
 single column is the only acceptable format.
 
-=head1 Legacy arguments
+=head1 LEGACY ATTRIBUTES
 
-=head2 ask_etc_hosts HashRef
+=head2 ask_etc_hosts
 
 my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
@@ -247,7 +247,7 @@ This hashref is part of the parent class Net::DNS::Dynamic::Proxyserver. Definit
 (in seconds) activates parsing of /etc/hosts and resolution of matching queries with a 
 lifespan of ttl.
 
-=head2 ask_sql_hosts HashRef
+=head2 ask_sql_hosts
 
 If defined, the module will query an sql database of hosts, provided the database file can be 
 accessed (read/write) with the defined uid/gid.
@@ -270,36 +270,52 @@ The 'statement' is a SELECT statement, which must return the IP address for the 
 replaced by the actual query name and type. Your statement must return the IP address as the 
 first column in the result.
 
-=head2 debug Int
+=head2 debug
 
 The debug option logs actions to stdout and may be set from 1-3 with increasing 
 verbosity: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
-and (3) resolver logging.
+and (3) resolver logging. 
 
-=head2 host String
+=head2 host
 
 The IP address to bind to. If not defined, the server binds to all (*).
 
-=head2 port Int
+=head2 port
 
 The tcp & udp port to run the DNS server under. Defaults to 53.
 
-=head2 uid Int
+=head2 uid
 
 The optional user id to switch to after the socket has been created.
 
-=head2 gid Int
+=head2 gid
 
 The optional group id to switch to after the socket has been created.
 
-=head2 nameservers ArrayRef
+=head2 nameservers
 
-Define one or more nameservers to forward any DNS queries to. Defaults to nameservers 
+An arrayref of one or more nameservers to forward any DNS queries to. Defaults to nameservers 
 listed in /etc/resolv.conf.
 
-=head2 nameservers_port Int
+=head2 nameservers_port
 
 Specify the port of the remote nameservers. Defaults to the standard port 53.
+
+=head1 CAVEATS
+
+=over
+
+=item * It will be necessary to manually adjust the host's network dns settings to take advantage 
+of the filtering. On Mac hosts, uncommenting the I<networksetup> system calls of adfilter.pm will 
+automate this.
+
+=item * Since the module's default behavior is to lookup forwarding in /etc/resolv.conf, it will 
+fail under I<windows> unless nameservers are specifed using the nameservers arrayref. The 
+sample script will also fail for similar reasons. 
+
+=back
+
+Then again, you could just run I<named>.
 
 =head1 AUTHOR
 

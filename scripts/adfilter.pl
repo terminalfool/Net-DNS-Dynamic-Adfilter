@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.05;
+use Net::DNS::Dynamic::Adfilter 0.06;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my $debug 	      = 0;
 my $verbose	      = 0;
@@ -27,7 +27,7 @@ my $nameserver_port   = 0;
 my $pgl_hosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
 my $pgl_hosts_path    = '/var/named/pglhosts';
 my $pgl_hosts_refresh = 7;
-my $more_hosts_path   = '/var/named/morehosts';
+my $more_hosts_path   = undef; #'/var/named/morehosts';
 
 GetOptions(
     'debug|d'	          => \$debug,
@@ -75,7 +75,7 @@ Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
 =head1 NAME
 
-adfilter.pl - A dynamic DNS-based ad filter
+adfilter.pl - Sample interface script to Net::DNS::Dynamic Adfilter
 
 =head1 SYNOPSIS
 
@@ -100,8 +100,9 @@ adfilter.pl [options]
         -pgl_hosts_refresh use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
                            refreshes pgl hosts using pgl_hosts_url if local copy is older than ttl
 
-Accept the defaults and run in background:
-   sudo perl adfilter.pl -bg              # you must manually kill this process
+  Accept the defaults and run in background:
+     sudo perl adfilter.pl -bg
+     # you must manually kill this process
 
 See also:
    perldoc Net::DNS::Dynamic::Adfilter
@@ -113,7 +114,7 @@ See Net::DNS::Dynamic::Adfilter for more information.
 
 =head1 AUTHOR
 
-David Watson <terminalfool@yahoo.com>
+David Watson <dwatson@cpan.org>
 
 =head1 COPYRIGHT
 
