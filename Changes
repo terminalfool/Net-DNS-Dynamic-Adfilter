@@ -20,3 +20,6 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 0.06 Mon Apr 23 21:27:44 EDT 2012
     - changed reply_handler to 'around' modifier
+
+0.061 Wed Apr 25 11:18:05 EDT 2012
+    - remove redundant hashes, minor pod edit
