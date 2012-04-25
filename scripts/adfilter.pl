@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.06;
+use Net::DNS::Dynamic::Adfilter 0.061;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.06';
+our $VERSION = '0.061';
 
 my $debug 	      = 0;
 my $verbose	      = 0;
@@ -96,9 +96,8 @@ adfilter.pl [options]
    -pgl -pgl_hosts_url     url to single column adhosts text
                            defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
         -pgl_hosts_path    path to local copy of adhosts text
+        -pgl_hosts_refresh local copy refresh value (days--defaults to 7)
         -more_hosts_path   path to optional single column list of adhosts
-        -pgl_hosts_refresh use local ad host lists to answer DNS queries with specified ttl (days--defaults to 7)
-                           refreshes pgl hosts using pgl_hosts_url if local copy is older than ttl
 
   Accept the defaults and run in background:
      sudo perl adfilter.pl -bg

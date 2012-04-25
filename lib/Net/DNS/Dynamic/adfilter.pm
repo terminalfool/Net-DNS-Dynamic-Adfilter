@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.06';
+our $VERSION = '0.061';
 
 use Moose;
 use LWP::Simple;
@@ -41,7 +41,6 @@ before 'signal_handler' => sub {
 #--
 
 around 'reply_handler' => sub {
-
         my $orig = shift;
         my $self = shift;
         my ($qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
@@ -73,22 +72,16 @@ around 'reply_handler' => sub {
 
 after 'read_config' => sub {
  	my ( $self ) = shift;
+        my $cache = ();
 
  	if ($self->ask_pgl_hosts) {
- 	        $self->ask_pgl_hosts->{cache} = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
-                 if ($self->adfilter) {
-                         %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_pgl_hosts->{cache} } );
- 		} else {
-   	                %{ $self->{adfilter} } = %{ $self->ask_pgl_hosts->{cache} };
- 	        }
+ 	        $cache = { $self->parse_pgl_hosts() };  # pgl.yoyo.org hosts
+    	        %{ $self->{adfilter} } = %{ $cache };
  	}
-         if ($self->ask_more_hosts) {
- 	        $self->ask_more_hosts->{cache} = { $self->parse_more_hosts() }; # local, custom hosts
-                 if ($self->adfilter) {
-                         %{ $self->{adfilter} } = ( %{ $self->{adfilter} }, %{ $self->ask_more_hosts->{cache} } );
- 		} else {
-   	                %{ $self->{adfilter} } = %{ $self->ask_more_hosts->{cache} };
- 	        }
+        if ($self->ask_more_hosts) {
+ 	        $cache = { $self->parse_more_hosts() }; # local, custom hosts
+                %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
+                                         : %{ $cache };
  	}
  	return;
 };
@@ -196,9 +189,9 @@ echoed to stdout.
 
 =head1 SYNOPSIS
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new();
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new();
 
-$adfilter->run();
+    $adfilter->run();
 
 Without any arguments, the module will function simply as a proxy, forwarding all requests 
 upstream to nameservers defined in /etc/resolv.conf.
@@ -207,15 +200,14 @@ upstream to nameservers defined in /etc/resolv.conf.
 
 =head2 ask_pgl_hosts
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_pgl_hosts => {
-
-        url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
-        path => '/var/named/adhosts',     #path to ad hosts
-        refresh => 7,                     #ttl in days (default = 7)
-    },
-);
+        ask_pgl_hosts => {
+            url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext',
+            path => '/var/named/adhosts',     #path to ad hosts
+            refresh => 7,                     #ttl in days (default = 7)
+        },
+    );
 
 The url above returns a single column list of ad hosts. In the module's current state, this is the 
 only acceptable format. The path argument defines where the module will write a local copy of this list. 
@@ -224,35 +216,36 @@ also determines the lifespan (ttl) of queries based upon this list.
 
 =head2 ask_more_hosts
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_more_hosts => {
-        path => '/var/named/morehosts',  #path to secondary hosts
-    },
-);
+        ask_more_hosts => {
+            path => '/var/named/morehosts',  #path to secondary hosts
+        },
+    );
 
 The path argument defines where the module will access an addendum of ad hosts to nullify. As above, a 
 single column is the only acceptable format.
 
 =head1 LEGACY ATTRIBUTES
 
+From the parent class Net::DNS::Dynamic::Proxyserver.
+
 =head2 ask_etc_hosts
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-    ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
-);
+        ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
+    );
 
-This hashref is part of the parent class Net::DNS::Dynamic::Proxyserver. Definition of ttl 
-(in seconds) activates parsing of /etc/hosts and resolution of matching queries with a 
-lifespan of ttl.
+Definition of ask_etc_hosts activates parsing of /etc/hosts and resolution of matching queries 
+with a lifespan of ttl (in seconds).
 
 =head2 ask_sql_hosts
 
 If defined, the module will query an sql database of hosts, provided the database file can be 
 accessed (read/write) with the defined uid/gid.
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
 
         ask_sql => {
   	    ttl => 60, 
@@ -263,7 +256,7 @@ my $adfilter = Net::DNS::Dynamic::Adfilter->new(
         },
         uid => 65534, #only if necessary
         gid => 65534,
-);
+    );
 
 The 'statement' is a SELECT statement, which must return the IP address for the given query name 
 (qname) and query type (qtype, like 'A' or 'MX'). The placeholders {qname} and {qtype} will be 
@@ -273,7 +266,7 @@ first column in the result.
 =head2 debug
 
 The debug option logs actions to stdout and may be set from 1-3 with increasing 
-verbosity: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
+output: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
 and (3) resolver logging. 
 
 =head2 host
@@ -303,19 +296,9 @@ Specify the port of the remote nameservers. Defaults to the standard port 53.
 
 =head1 CAVEATS
 
-=over
-
-=item * It will be necessary to manually adjust the host's network dns settings to take advantage 
+It will be necessary to manually adjust the host's network dns settings to take advantage 
 of the filtering. On Mac hosts, uncommenting the I<networksetup> system calls of adfilter.pm will 
 automate this.
-
-=item * Since the module's default behavior is to lookup forwarding in /etc/resolv.conf, it will 
-fail under I<windows> unless nameservers are specifed using the nameservers arrayref. The 
-sample script will also fail for similar reasons. 
-
-=back
-
-Then again, you could just run I<named>.
 
 =head1 AUTHOR
 
