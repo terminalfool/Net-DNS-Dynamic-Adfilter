@@ -23,3 +23,6 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 0.061 Wed Apr 25 11:18:05 EDT 2012
     - remove redundant hashes, minor pod edit
+
+0.062 Thu Apr 26 04:07:39 EDT 2012
+    - comment out system calls blunder

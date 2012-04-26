@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.061;
+use Net::DNS::Dynamic::Adfilter 0.062;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.061';
+our $VERSION = '0.062';
 
 my $debug 	      = 0;
 my $verbose	      = 0;

@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.061';
+our $VERSION = '0.062';
 
 use Moose;
 use LWP::Simple;
@@ -23,8 +23,8 @@ override 'run' => sub {
 	my $localip = $sock->sockhost;
 
 #--switch dns settings on mac osx, wireless interface
-	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
-	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -33,11 +33,11 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-before 'signal_handler' => sub {
-	my ( $self ) = shift;
-	system('networksetup -setdnsservers "Wi-Fi" empty');
-	system('networksetup -setsearchdomains "Wi-Fi" empty');
-};
+#before 'signal_handler' => sub {
+#	my ( $self ) = shift;
+#	system('networksetup -setdnsservers "Wi-Fi" empty');
+#	system('networksetup -setsearchdomains "Wi-Fi" empty');
+#};
 #--
 
 around 'reply_handler' => sub {
@@ -209,10 +209,11 @@ upstream to nameservers defined in /etc/resolv.conf.
         },
     );
 
-The url above returns a single column list of ad hosts. In the module's current state, this is the 
-only acceptable format. The path argument defines where the module will write a local copy of this list. 
-The refresh value determines what age (in days) the local copy may be before it is refreshed. This value 
-also determines the lifespan (ttl) of queries based upon this list.
+The ask_pgl_hosts hashref defines a url that returns a single column list of ad hosts. In the 
+module's current version, this is the only acceptable format. A path string defines where the 
+module will write a local copy of this list. The refresh value determines what age (in days) 
+the local copy may be before it is refreshed. This value also determines the lifespan (ttl) 
+of queries based upon this list.
 
 =head2 ask_more_hosts
 
@@ -223,8 +224,8 @@ also determines the lifespan (ttl) of queries based upon this list.
         },
     );
 
-The path argument defines where the module will access an addendum of ad hosts to nullify. As above, a 
-single column is the only acceptable format.
+The ask_more_hosts hashref contains only a path string that defines where the module will access an 
+addendum of ad hosts to nullify. As above, a single column is the only acceptable format.
 
 =head1 LEGACY ATTRIBUTES
 
