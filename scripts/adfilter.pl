@@ -5,12 +5,12 @@ use lib "lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.062;
+use Net::DNS::Dynamic::Adfilter 0.063;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.062';
+our $VERSION = '0.063';
 
 my $debug 	      = 0;
 my $verbose	      = 0;
@@ -75,7 +75,7 @@ Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
 =head1 NAME
 
-adfilter.pl - Sample interface script to Net::DNS::Dynamic Adfilter
+adfilter.pl - Sample interface script to Net::DNS::Dynamic::Adfilter
 
 =head1 SYNOPSIS
 

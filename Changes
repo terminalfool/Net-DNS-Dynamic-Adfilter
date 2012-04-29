@@ -26,3 +26,8 @@ Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 0.062 Thu Apr 26 04:07:39 EDT 2012
     - comment out system calls blunder
+
+0.063 Sat Apr 28 11:08:35 EDT 2012
+    - use Net::Address::IP::Local to address ::INET incompatibilities on some systems
+
+

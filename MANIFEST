@@ -1,8 +1,0 @@
-MANIFEST
-README
-Changes
-Makefile.PL
-lib/Net/DNS/Dynamic/Adfilter.pm
-t/1.t
-t/2.t
-scripts/adfilter.pl

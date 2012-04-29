@@ -5,7 +5,6 @@ BEGIN { plan tests => 1 };
 
 use lib "../lib/";
 use Net::DNS::Dynamic::Adfilter;
-
 use Net::DNS::Resolver;
 
 $SIG{CHLD} = 'IGNORE';
