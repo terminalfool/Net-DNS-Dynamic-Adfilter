@@ -2,9 +2,10 @@ package Net::DNS::Dynamic::Adfilter;
 
 our $VERSION = '0.063';
 
-use Moose;
-use LWP::Simple;
-use Net::Address::IP::Local;
+use Moose 2.0403;
+use LWP::Simple 6.00;
+use Net::Address::IP::Local 0.1.2;
+use Net::DNS::Dynamic::Proxyserver 1.2;
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
