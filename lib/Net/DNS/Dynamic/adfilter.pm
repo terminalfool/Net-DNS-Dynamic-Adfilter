@@ -20,8 +20,8 @@ override 'run' => sub {
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
-#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
-#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -30,22 +30,21 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-#before 'signal_handler' => sub {
-#	my ( $self ) = shift;
-#	system('networksetup -setdnsservers "Wi-Fi" empty');
-#	system('networksetup -setsearchdomains "Wi-Fi" empty');
-#};
+before 'signal_handler' => sub {
+	my ( $self ) = shift;
+	system('networksetup -setdnsservers "Wi-Fi" empty');
+	system('networksetup -setsearchdomains "Wi-Fi" empty');
+};
 #--
 
-around 'reply_handler' => sub {
+around 'reply_handler' => sub {                         # query ad listings
+
         my $orig = shift;
         my $self = shift;
         my ($qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
 
         my ($rcode, @ans, @auth, @add);
 
- 	# see if we can answer the question from hosts listings
- 	#
  	if ($self->adfilter && ($qtype eq 'A' || $qtype eq 'PTR')) {
     
  		if (my $ip = $self->query_adfilter( $qname, $qtype )) {
@@ -170,8 +169,8 @@ either to a specified list of nameservers or to those listed in /etc/resolv.conf
 The module can also load and resolve host definitions found in /etc/hosts as 
 well as hosts defined in a sql database.
 
-Externally maintained lists of ad hosts may be loaded periodically through a specified 
-url. A local addendum of hosts may also be specified. Ad host listings must conform 
+Externally maintained lists of ad hosts can be loaded periodically through a specified 
+url. A local addendum of hosts can also be specified. Ad host listings must conform 
 to a one host per line format:
 
   # ad nauseam
@@ -263,7 +262,7 @@ first column in the result.
 
 =head2 debug
 
-The debug option logs actions to stdout and may be set from 1-3 with increasing 
+The debug option logs actions to stdout and can be set from 1-3 with increasing 
 output: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
 and (3) resolver logging. 
 

@@ -1,33 +1,31 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
-0.01 Mon Mar 19 13:41:55 2012
-    - original version; created by ExtUtils::ModuleMaker 0.51
-
-0.02 Sun Mar 25 2012
-    - added parsing of secondary ad hosts file
-
-0.03 Fri Mar 30 03:25:05 EDT 2012
-    - merged ttl with refresh value of pgl adhost list
-
-0.04 Tue Apr  3 03:08:30 EDT 2012
-    - moved variables into adfilter hashref, moved defaults into script
-
-0.05 Mon Apr 16 10:51:06 EDT 2012
-    - moved ad hosts into cache hashref, added secondary hosts hashref
-
-0.05_01 Wed Apr 18 14:00:35 EDT 2012
-    - bundled initial cpan release
-
-0.06 Mon Apr 23 21:27:44 EDT 2012
-    - changed reply_handler to 'around' modifier
-
-0.061 Wed Apr 25 11:18:05 EDT 2012
-    - remove redundant hashes, minor pod edit
+0.063 Sat Apr 28 11:08:35 EDT 2012
+    - use Net::Address::IP::Local to address ::INET incompatibilities on some systems
 
 0.062 Thu Apr 26 04:07:39 EDT 2012
     - comment out system calls blunder
 
-0.063 Sat Apr 28 11:08:35 EDT 2012
-    - use Net::Address::IP::Local to address ::INET incompatibilities on some systems
+0.061 Wed Apr 25 11:18:05 EDT 2012
+    - remove redundant hashes, minor pod edit
 
+0.06 Mon Apr 23 21:27:44 EDT 2012
+    - changed reply_handler to 'around' modifier
 
+0.05_01 Wed Apr 18 14:00:35 EDT 2012
+    - bundled initial cpan release
+
+0.05 Mon Apr 16 10:51:06 EDT 2012
+    - moved ad hosts into cache hashref, added secondary hosts hashref
+
+0.04 Tue Apr  3 03:08:30 EDT 2012
+    - moved variables into adfilter hashref, moved defaults into script
+
+0.03 Fri Mar 30 03:25:05 EDT 2012
+    - merged ttl with refresh value of pgl adhost list
+
+0.02 Sun Mar 25 2012
+    - added parsing of secondary ad hosts file
+
+0.01 Mon Mar 19 13:41:55 2012
+    - original version; created by ExtUtils::ModuleMaker 0.51
