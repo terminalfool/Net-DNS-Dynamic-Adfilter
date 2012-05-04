@@ -1,6 +1,10 @@
 package Net::DNS::Dynamic::Adfilter;
 
+<<<<<<< HEAD
 our $VERSION = '0.064';
+=======
+our $VERSION = '0.06301';
+>>>>>>> added fanboy hashref
 
 use Moose 2.0403;
 use Net::Address::IP::Local 0.1.2;
