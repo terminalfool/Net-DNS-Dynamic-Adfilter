@@ -21,7 +21,6 @@ override 'run' => sub {
 
 #--switch dns settings on mac osx, wireless interface
 	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
-#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
 	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
