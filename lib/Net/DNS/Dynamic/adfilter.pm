@@ -20,7 +20,8 @@ override 'run' => sub {
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
-	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
+	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
+#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
 	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
@@ -45,7 +46,7 @@ around 'reply_handler' => sub {                         # query ad listings
 
         my ($rcode, @ans, @auth, @add);
 
- 	if ($self->adfilter && ($qtype eq 'A' || $qtype eq 'PTR')) {
+ 	if ($self->adfilter && ($qtype eq 'AAAA' || $qtype eq 'A' || $qtype eq 'PTR')) {
     
  		if (my $ip = $self->query_adfilter( $qname, $qtype )) {
 
@@ -85,9 +86,9 @@ after 'read_config' => sub {
 sub query_adfilter {
 	my ( $self, $qname, $qtype ) = @_;
 
-	$qname =~ s/^.*\.(\w+\.\w+)$/$1/ if $qtype eq 'A';
+	$qname =~ s/^.*\.(\w+\.\w+)$/$1/ if ($qtype eq 'A' || $qtype eq 'AAAA');
 	
-	return $self->search_ip_in_adfilter( $qname ) if $qtype eq 'A';
+	return $self->search_ip_in_adfilter( $qname ) if  ($qtype eq 'A' || $qtype eq 'AAAA');
 	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
 }
 
