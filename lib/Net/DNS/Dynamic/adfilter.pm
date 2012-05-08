@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.063';
+our $VERSION = '0.064';
 
 use Moose 2.0403;
 use LWP::Simple 6.00;

@@ -1,5 +1,8 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
+0.064 Tue May  8 11:34:20 EDT 2012 
+    - accommodate ipv6, ^www and second level domain queries
+ 
 0.063 Sat Apr 28 11:08:35 EDT 2012
     - use Net::Address::IP::Local to address ::INET incompatibilities on some systems
 
