@@ -20,8 +20,8 @@ override 'run' => sub {
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
-	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
-	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+#	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
+#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -30,11 +30,11 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-before 'signal_handler' => sub {
-	my ( $self ) = shift;
-	system('networksetup -setdnsservers "Wi-Fi" empty');
-	system('networksetup -setsearchdomains "Wi-Fi" empty');
-};
+#before 'signal_handler' => sub {
+#	my ( $self ) = shift;
+#	system('networksetup -setdnsservers "Wi-Fi" empty');
+#	system('networksetup -setsearchdomains "Wi-Fi" empty');
+#};
 #--
 
 around 'reply_handler' => sub {                         # query ad listings
@@ -85,16 +85,20 @@ after 'read_config' => sub {
 sub query_adfilter {
 	my ( $self, $qname, $qtype ) = @_;
 
-	$qname =~ s/^.*\.(\w+\.\w+)$/$1/ if ($qtype eq 'A' || $qtype eq 'AAAA');
-	
 	return $self->search_ip_in_adfilter( $qname ) if  ($qtype eq 'A' || $qtype eq 'AAAA');
 	return $self->search_hostname_by_ip( $qname ) if $qtype eq 'PTR';
 }
 
 sub search_ip_in_adfilter {
         my ( $self, $hostname ) = @_;
+	my $trim = $hostname;
+	my $sld = $hostname;
+	$trim =~ s/^www\.//i;
+	$sld =~ s/^.*\.(\w+\.\w+)$/$1/;
 
-        return '::1' if (exists $self->adfilter->{$hostname});
+	return '::1' if ( exists $self->adfilter->{$hostname} ||
+			  exists $self->adfilter->{$trim} ||
+			  exists $self->adfilter->{$sld} );
         return;
 }
 
@@ -293,9 +297,9 @@ Specify the port of the remote nameservers. Defaults to the standard port 53.
 
 =head1 CAVEATS
 
-It will be necessary to manually adjust the host's network dns settings to take advantage 
-of the filtering. On Mac hosts, uncommenting the I<networksetup> system calls of Adfilter.pm will 
-automate this.
+It will be necessary to manually set the host's network dns settings to 127.0.0.1 in 
+order to take advantage of the filtering. On Mac hosts, uncommenting the I<networksetup> 
+system calls of Adfilter.pm will automate this.
 
 =head1 AUTHOR
 

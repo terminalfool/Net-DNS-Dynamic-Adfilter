@@ -27,8 +27,7 @@ my $nameserver_port   = 0;
 my $pgl_hosts_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
 my $pgl_hosts_path    = '/var/named/pglhosts';
 my $pgl_hosts_refresh = 7;
-#my $more_hosts_path   = undef; #'/var/named/morehosts';
-my $more_hosts_path   = '/var/named/morehosts';
+my $more_hosts_path   = undef; #'/var/named/morehosts';
 
 GetOptions(
     'debug|d'	          => \$debug,
