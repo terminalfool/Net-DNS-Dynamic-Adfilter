@@ -56,9 +56,7 @@ around 'reply_handler' => sub {                         # query ad listings
                  	$self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
  			$self->log("[local host listings] resolved $qname to $ip NOERROR");
 
-                        my $refresh = $self->ask_pgl_hosts->{adhosts_refresh} || 7;
-
- 			my ($ttl, $rdata) = ((int(abs($refresh)) * 86400), $ip );
+ 			my ($ttl, $rdata) = ( 300, $ip );
         
  			push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
 
@@ -75,21 +73,21 @@ after 'read_config' => sub {
         my $cache = ();
 
  	if ($self->ask_pgl_hosts) {
- 	        $cache = { $self->parse_pgl_hosts() };    # pgl.yoyo.org hosts
+ 	        $cache = { $self->parse_pgl_hosts() };      # pgl.yoyo.org hosts
     	        %{ $self->{adfilter} } = %{ $cache };
  	}
         if ($self->ask_fanboy_hosts) {
- 	        $cache = { $self->parse_fanboy_hosts() }; # fanboy-adblock hosts
+ 	        $cache = { $self->parse_fanboy_hosts() };   # fanboy.co.nz hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
         if ($self->ask_easylist_hosts) {
- 	        $cache = { $self->parse_easylist_hosts() }; # fanboy-adblock hosts
+ 	        $cache = { $self->parse_easylist_hosts() }; # adblockplus.org hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
         if ($self->ask_more_hosts) {
- 	        $cache = { $self->parse_more_hosts() }; # local, custom hosts
+ 	        $cache = { $self->parse_more_hosts() };     # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
@@ -203,7 +201,7 @@ sub parse_adblock_plus_hosts {
 
 	while (<HOSTS>) {
 	        chomp;
-		next unless s/^\|\|((\w+\.)+\w+)\^(\$third-party)?$/$1/;  #extract adblock hosts
+		next unless s/^\|\|((\w+\.)+\w+)\^(\$third-party)?$/$1/;  #extract adblock host
 		$hosts{$_}++;
 	}
 
@@ -243,22 +241,26 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 =head1 DESCRIPTION
 
 This is a DNS server intended for use as an ad filter for a local area network. 
-Its function is to load lists of ad domains and nullify DNS queries for those 
+Its function is to load lists of ad domains and nullify DNS queries for these 
 domains to the loopback address. Any other DNS queries are proxied upstream, 
 either to a specified list of nameservers or to those listed in /etc/resolv.conf. 
 The module can also load and resolve host definitions found in /etc/hosts as 
 well as hosts defined in a sql database.
 
-Externally maintained lists of ad hosts can be loaded periodically through a specified 
-url. A local addendum of hosts can also be specified. Ad host listings must conform 
-either to Adblock Plus format or to a one host per line format:
+The module loads externally maintained lists of ad hosts used by Adblock Plus, 
+the popular ad filtering extension for the Firefox browser. Use of the lists 
+focuses only on third-party listings, since these generally define dedicated 
+ad/tracking hosts.
 
-  # ad nauseam
-  googlesyndication.com
-  facebook.com
-  twitter.com
-  ...
-  adinfinitum.com
+A local addendum of hosts can also be specified. In this case, ad host listings 
+must conform to a one host per line format:
+
+    # ad nauseam
+    googlesyndication.com
+    facebook.com
+    twitter.com
+    ...
+    adinfinitum.com
 
 Once running, local network dns queries can be addressed to the host's ip. This ip is 
 echoed to stdout.
@@ -285,11 +287,9 @@ upstream to nameservers defined in /etc/resolv.conf.
         },
     );
 
-The ask_pgl_hosts hashref defines a url that returns a list of ad hosts formatted for the 
-Firefox extension Adblock Plus. A path string defines where the module will write a local 
-copy of this list. The refresh value determines what age (in days) the local copy may be 
-before it is refreshed. This value also determines the lifespan (ttl) of queries based 
-upon this list.
+The ask_pgl_hosts hashref defines a url that returns a list of ad hosts from pgl.yoyo.org. 
+A path string defines where the module will write a local copy of this list. The refresh 
+value determines what age (in days) the local copy may be before it is refreshed.
 
 =head2 ask_fanboy_hosts
 
@@ -302,8 +302,8 @@ upon this list.
         },
     );
 
-Similar to ask_pgl_hosts, this hashref defines the parameters for fetching and saving the 
-fanboy host list.
+Similar to ask_pgl_hosts, this hashref defines the parameters for using the host list 
+at www.fanboy.co.nz.
 
 =head2 ask_easylist_hosts
 
@@ -316,8 +316,8 @@ fanboy host list.
         },
     );
 
-Also similar to ask_pgl_hosts, this hashref defines the parameters for fetching and saving 
-the easylist host list.
+Also similar to ask_pgl_hosts, this hashref defines the parameters for using the host 
+list at easylist.adblockplus.org.
 
 =head2 ask_more_hosts
 
@@ -376,7 +376,8 @@ and (3) resolver logging.
 
 =head2 host
 
-The IP address to bind to. If not defined, the server binds to all (*).
+The IP address to bind to. If not defined, the server binds to all (*). This might not 
+be possible on some networks. Use 127.0.0.1.
 
 =head2 port
 
@@ -403,7 +404,7 @@ Specify the port of the remote nameservers. Defaults to the standard port 53.
 
 It will be necessary to manually set the host's network dns settings to 127.0.0.1 in 
 order to take advantage of the filtering. On Mac hosts, uncommenting the I<networksetup> 
-system calls of Adfilter.pm will automate this.
+system calls in the module will automate this.
 
 =head1 AUTHOR
 
