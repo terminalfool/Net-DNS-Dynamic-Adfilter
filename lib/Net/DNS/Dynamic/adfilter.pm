@@ -12,10 +12,8 @@ $ua->agent("");
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has adfilter=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_pgl_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_fanboy_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_easylist_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has ask_more_hosts=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has load_adblock_filter=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has load_custom_filter=> ( is => 'rw', isa => 'HashRef', required => 0 );
 
 override 'run' => sub {
 
@@ -72,22 +70,12 @@ after 'read_config' => sub {
  	my ( $self ) = shift;
         my $cache = ();
 
- 	if ($self->ask_pgl_hosts) {
- 	        $cache = { $self->parse_pgl_hosts() };      # pgl.yoyo.org hosts
+ 	if ($self->load_adblock_filter) {
+ 	        $cache = { $self->parse_adblock_filter() };      # pgl.yoyo.org hosts
     	        %{ $self->{adfilter} } = %{ $cache };
  	}
-        if ($self->ask_fanboy_hosts) {
- 	        $cache = { $self->parse_fanboy_hosts() };   # fanboy.co.nz hosts
-                %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
-                                         : %{ $cache };
- 	}
-        if ($self->ask_easylist_hosts) {
- 	        $cache = { $self->parse_easylist_hosts() }; # adblockplus.org hosts
-                %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
-                                         : %{ $cache };
- 	}
-        if ($self->ask_more_hosts) {
- 	        $cache = { $self->parse_more_hosts() };     # local, custom hosts
+        if ($self->load_custom_filter) {
+ 	        $cache = { $self->parse_custom_filter() };     # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
@@ -114,76 +102,32 @@ sub search_ip_in_adfilter {
         return;
 }
 
-sub parse_pgl_hosts {
+sub parse_adblock_filter {
 	my ( $self ) = shift;
 
-	return unless $self->ask_pgl_hosts;
+	return unless $self->load_adblock_filter;
 
 	my %cache;
 
-	my $hostsfile = $self->ask_pgl_hosts->{path} or die "ask_pgl_hosts->{path} is undefined";
-	my $refresh = $self->ask_pgl_hosts->{refresh} || 7;
+	my $hostsfile = $self->load_adblock_filter->{path} or die "load_adblock_filter->{path} is undefined";
+	my $refresh = $self->load_adblock_filter->{refresh} || 7;
 	my $age = -M $hostsfile || $refresh;
 
 	if ($age >= $refresh) {
-        	my $url = $self->ask_pgl_hosts->{url} or die "attempting to refresh $hostsfile failed as ask_pgl_hosts->{url} is undefined";
+        	my $url = $self->load_adblock_filter->{url} or die "attempting to refresh $hostsfile failed as load_adblock_filter->{url} is undefined";
 	        $self->log("refreshing pgl hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
 	}
 
-	%cache = $self->parse_adblock_plus_hosts($hostsfile);
+	%cache = $self->parse_adblock_hosts($hostsfile);
 		
 	return %cache;
 }
 
-sub parse_fanboy_hosts {
+sub parse_custom_filter {
 	my ( $self ) = shift;
 
-	return unless $self->ask_fanboy_hosts;
-
-	my %cache;
-
-	my $hostsfile = $self->ask_fanboy_hosts->{path} or die "ask_fanboy_hosts->{path} is undefined";
-	my $refresh = $self->ask_fanboy_hosts->{refresh} || 4;
-	my $age = -M $hostsfile || $refresh;
-
-	if ($age >= $refresh) {
-        	my $url = $self->ask_fanboy_hosts->{url} or die "attempting to refresh $hostsfile failed as ask_fanboy_hosts->{url} is undefined";
-	        $self->log("refreshing fanboy hosts: $hostsfile", 1);
-	        getstore($url, $hostsfile);
-	}
-
-	%cache = $self->parse_adblock_plus_hosts($hostsfile);
-
-	return %cache;
-}
-
-sub parse_easylist_hosts {
-	my ( $self ) = shift;
-
-	return unless $self->ask_easylist_hosts;
-
-	my %cache;
-
-	my $hostsfile = $self->ask_easylist_hosts->{path} or die "ask_easylist_hosts->{path} is undefined";
-	my $refresh = $self->ask_easylist_hosts->{refresh} || 4;
-	my $age = -M $hostsfile || $refresh;
-
-	if ($age >= $refresh) {
-        	my $url = $self->ask_easylist_hosts->{url} or die "attempting to refresh $hostsfile failed as ask_easylist_hosts->{url} is undefined";
-	        $self->log("refreshing easylist hosts: $hostsfile", 1);
-	        getstore($url, $hostsfile);
-	}
-
-	%cache = $self->parse_adblock_plus_hosts($hostsfile);
-
-	return %cache;
-}
-
-sub parse_more_hosts {
-	my ( $self ) = shift;
-
-	return unless my $hostsfile = $self->ask_more_hosts->{path};
+	return unless my $hostsfile = $self->load_custom_filter->{path};
 
 	my %cache;
 
@@ -192,7 +136,7 @@ sub parse_more_hosts {
 	return %cache;
 }
 
-sub parse_adblock_plus_hosts {
+sub parse_adblock_hosts {
 	my ( $self, $hostsfile ) = @_;
 
 	my %hosts;
@@ -276,60 +220,33 @@ upstream to nameservers defined in /etc/resolv.conf.
 
 =head1 ATTRIBUTES
 
-=head2 ask_pgl_hosts
+=head2 load_adblock_filter
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        ask_pgl_hosts => {
+        load_adblock_filter => {
             url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
             path => '/var/named/adhosts',     #path to ad hosts
-            refresh => 7,                     #ttl in days (default = 7)
+            refresh => 7,                     #refresh value in days (default = 7)
         },
     );
 
-The ask_pgl_hosts hashref defines a url that returns a list of ad hosts from pgl.yoyo.org. 
-A path string defines where the module will write a local copy of this list. The refresh 
-value determines what age (in days) the local copy may be before it is refreshed.
+The load_adblock_filter hashref defines a url that returns a list of ad hosts in adblock 
+plus format. A path string defines where the module will write a local copy of this list. 
+The refresh value determines what age (in days) the local copy may be before it is head2.
 
-=head2 ask_fanboy_hosts
-
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
-
-        ask_fanboy_hosts => {
-            url => 'http://http://www.fanboy.co.nz/fanboy-adblock.txt';
-            path => '/var/named/fanboy-adblock.txt',     #path to ad hosts
-            refresh => 4,                     #ttl in days (default = 4)
-        },
-    );
-
-Similar to ask_pgl_hosts, this hashref defines the parameters for using the host list 
-at www.fanboy.co.nz.
-
-=head2 ask_easylist_hosts
+=head2  load_custom_filter
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        ask_easylist_hosts => {
-            url => 'https://easylist-downloads.adblockplus.org/easylist.txt',
-            path => '/var/named/easylist-adblock.txt',     #path to ad hosts
-            refresh => 5,                     #ttl in days (default = 4)
-        },
-    );
-
-Also similar to ask_pgl_hosts, this hashref defines the parameters for using the host 
-list at easylist.adblockplus.org.
-
-=head2 ask_more_hosts
-
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
-
-        ask_more_hosts => {
+        load_custom_filter => {
             path => '/var/named/morehosts',  #path to secondary hosts
         },
     );
 
-The ask_more_hosts hashref contains only a path string that defines where the module will access an 
-addendum of ad hosts to nullify. As mentioned above, a single column is the only acceptable format.
+The load_custom_filter hashref contains only a path string that defines where the module will 
+access an addendum of ad hosts to nullify. As mentioned above, a single column is the only 
+acceptable format.
 
 =head1 LEGACY ATTRIBUTES
 

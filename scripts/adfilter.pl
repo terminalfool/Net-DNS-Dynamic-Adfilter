@@ -24,20 +24,11 @@ my $gid		      = undef;
 my $nameserver	      = undef;
 my $nameserver_port   = 0;
 
-#my $pgl_hosts_url         = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext';
-my $pgl_hosts_url          = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext';
-my $pgl_hosts_path         = '/var/named/pgl-adblock.txt';
-my $pgl_hosts_refresh      = 7;
+my $adblock_filter_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext';
+my $adblock_filter_path    = '/var/named/pgl-adblock.txt';
+my $adblock_filter_refresh = 7;
 
-my $fanboy_hosts_url       = 'http://www.fanboy.co.nz/fanboy-adblock.txt';
-my $fanboy_hosts_path      = '/var/named/fanboy-adblock.txt';
-my $fanboy_hosts_refresh   = 4;
-
-my $easylist_hosts_url     = 'https://easylist-downloads.adblockplus.org/easylist.txt';
-my $easylist_hosts_path    = '/var/named/easylist-adblock.txt';
-my $easylist_hosts_refresh = 5;
-
-my $more_hosts_path      = '/var/named/morehosts';
+my $custom_filter_path     = '/var/named/morehosts';
 
 GetOptions(
     'debug|d'	               => \$debug,
@@ -51,19 +42,11 @@ GetOptions(
     'gid|g=s'	               => \$gid,
     'nameserver|ns=s'          => \$nameserver,
 
-    'pgl_hosts_url|pgl=s'      => \$pgl_hosts_url,
-    'pgl_hosts_path=s'         => \$pgl_hosts_path,
-    'pgl_hosts_refresh=s'      => \$pgl_hosts_refresh,
+    'adblock_filter_url|abf=s' => \$adblock_filter_url,
+    'adblock_filter_path=s'    => \$adblock_filter_path,
+    'adblock_filter_refresh=s' => \$adblock_filter_refresh,
 
-    'fanboy_hosts_url|pgl=s'   => \$fanboy_hosts_url,
-    'fanboy_hosts_path=s'      => \$fanboy_hosts_path,
-    'fanboy_hosts_refresh=s'   => \$fanboy_hosts_refresh,
-
-    'easylist_hosts_url|ez=s'  => \$easylist_hosts_url,
-    'easylist_hosts_path=s'    => \$easylist_hosts_path,
-    'easylist_hosts_refresh=s' => \$easylist_hosts_refresh,
-
-    'more_hosts_path=s'      => \$more_hosts_path,
+    'custom_filter_path=s'     => \$custom_filter_path,
 );
 
 pod2usage(1) if $help;
@@ -83,22 +66,12 @@ $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
 
-$args->{ask_pgl_hosts} = { url => $pgl_hosts_url, 
-			   path => $pgl_hosts_path,
-			   refresh => $pgl_hosts_refresh,
+$args->{load_adblock_filter} = { url => $adblock_filter_url, 
+			   path => $adblock_filter_path,
+			   refresh => $adblock_filter_refresh,
 		         };
 
-$args->{ask_fanboy_hosts} = { url => $fanboy_hosts_url, 
-			   path => $fanboy_hosts_path,
-			   refresh => $fanboy_hosts_refresh,
-		         };
-
-$args->{ask_easylist_hosts} = { url => $easylist_hosts_url, 
-			   path => $easylist_hosts_path,
-			   refresh => $easylist_hosts_refresh,
-		         };
-
-$args->{ask_more_hosts} = { path => $more_hosts_path };
+$args->{load_custom_filter} = { path => $custom_filter_path };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -122,22 +95,12 @@ adfilter.pl [options]
         -etc                    use /etc/hosts to answer DNS queries with specified ttl (seconds)
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
 
-   -pgl -pgl_hosts_url          url to single column adhosts text
+   -abf -adblock_filter_url     url to single column adhosts text
                                   defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
-        -pgl_hosts_path         path to local copy of adhosts text
-        -pgl_hosts_refresh      local copy refresh value (days--defaults to 7)
+        -adblock_filter_path    path to local copy of adhosts text
+        -adblock_filter_refresh local copy refresh value (days--defaults to 7)
 
-    -fb -fanboy_hosts_url       url to single column adhosts text
-                                  defaults to http://www.fanboy.co.nz/fanboy-adblock.txt
-        -fanboy_hosts_path      path to local copy of fanboy hosts text
-        -fanboy_hosts_refresh   local copy refresh value (days--defaults to 4)
-
-    -ez -easylist_hosts_url     url to single column adhosts text
-                                  defaults to https://easylist-downloads.adblockplus.org/easylist.txt
-        -easylist_hosts_path    path to local copy of fanboy hosts text
-        -easylist_hosts_refresh local copy refresh value (days--defaults to 4)
-
-        -more_hosts_path        path to optional single column list of adhosts
+        -custom_filter_path     path to optional single column list of adhosts
 
   Accept the defaults and run in background:
      sudo perl adfilter.pl -bg
