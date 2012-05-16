@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.064';
+our $VERSION = '0.065';
 
 use Moose 2.0403;
 use Net::Address::IP::Local 0.1.2;
@@ -11,9 +11,9 @@ $ua->agent("");
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has adfilter=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has load_adblock_filter=> ( is => 'rw', isa => 'HashRef', required => 0 );
-has load_custom_filter=> ( is => 'rw', isa => 'HashRef', required => 0 );
+has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
+has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
+has custom_filter => ( is => 'rw', isa => 'HashRef', required => 0 );
 
 override 'run' => sub {
 
@@ -70,12 +70,13 @@ after 'read_config' => sub {
  	my ( $self ) = shift;
         my $cache = ();
 
- 	if ($self->load_adblock_filter) {
- 	        $cache = { $self->parse_adblock_filter() };      # pgl.yoyo.org hosts
-    	        %{ $self->{adfilter} } = %{ $cache };
- 	}
-        if ($self->load_custom_filter) {
- 	        $cache = { $self->parse_custom_filter() };     # local, custom hosts
+ 	for ( @{ $self->adblock_stack } ) {
+ 	        $cache = { $self->load_adblock_filter($_) };    # adblock plus hosts
+                %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
+                                         : %{ $cache };
+	      }
+        if ($self->custom_filter) {
+ 	        $cache = { $self->load_custom_filter() };     # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
@@ -102,20 +103,18 @@ sub search_ip_in_adfilter {
         return;
 }
 
-sub parse_adblock_filter {
+sub load_adblock_filter {
 	my ( $self ) = shift;
-
-	return unless $self->load_adblock_filter;
 
 	my %cache;
 
-	my $hostsfile = $self->load_adblock_filter->{path} or die "load_adblock_filter->{path} is undefined";
-	my $refresh = $self->load_adblock_filter->{refresh} || 7;
+	my $hostsfile = $_->{path} or die "adblock {path} is undefined";
+	my $refresh = $_->{refresh} || 7;
 	my $age = -M $hostsfile || $refresh;
 
 	if ($age >= $refresh) {
-        	my $url = $self->load_adblock_filter->{url} or die "attempting to refresh $hostsfile failed as load_adblock_filter->{url} is undefined";
-	        $self->log("refreshing pgl hosts: $hostsfile", 1);
+        	my $url = $_->{url} or die "attempting to refresh $hostsfile failed as {url} is undefined";
+	        $self->log("refreshing hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
 	}
 
@@ -124,10 +123,10 @@ sub parse_adblock_filter {
 	return %cache;
 }
 
-sub parse_custom_filter {
+sub load_custom_filter {
 	my ( $self ) = shift;
 
-	return unless my $hostsfile = $self->load_custom_filter->{path};
+	return unless my $hostsfile = $self->custom_filter->{path};
 
 	my %cache;
 
@@ -191,20 +190,13 @@ either to a specified list of nameservers or to those listed in /etc/resolv.conf
 The module can also load and resolve host definitions found in /etc/hosts as 
 well as hosts defined in a sql database.
 
-The module loads externally maintained lists of ad hosts used by Adblock Plus, 
-the popular ad filtering extension for the Firefox browser. Use of the lists 
-focuses only on third-party listings, since these generally define dedicated 
-ad/tracking hosts.
+The module loads externally maintained lists of ad hosts intended for use  by 
+Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of 
+the lists focuses only on third-party listings, since these generally define 
+dedicated ad/tracking hosts.
 
 A local addendum of hosts can also be specified. In this case, ad host listings 
-must conform to a one host per line format:
-
-    # ad nauseam
-    googlesyndication.com
-    facebook.com
-    twitter.com
-    ...
-    adinfinitum.com
+must conform to a one host per line format.
 
 Once running, local network dns queries can be addressed to the host's ip. This ip is 
 echoed to stdout.
@@ -220,33 +212,56 @@ upstream to nameservers defined in /etc/resolv.conf.
 
 =head1 ATTRIBUTES
 
-=head2 load_adblock_filter
+=head2 adblock_stack
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        load_adblock_filter => {
+        adblock_stack => [
+            {
             url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
             path => '/var/named/adhosts',     #path to ad hosts
             refresh => 7,                     #refresh value in days (default = 7)
-        },
+            },
+
+            {
+            url => 'https://easylist-downloads.adblockplus.org/easyprivacy.txt',
+            path => '/var/named/easyprivacy.txt',
+            refresh => 5,
+            },
+        ],
     );
 
-The load_adblock_filter hashref defines a url that returns a list of ad hosts in adblock 
-plus format. A path string defines where the module will write a local copy of this list. 
-The refresh value determines what age (in days) the local copy may be before it is head2.
+The adblock_stack arrayref encloses one or more hashrefs composed of three 
+arguments: a url that returns a list of ad hosts in adblock plus format; 
+a path string that defines where the module will write a local copy of 
+the list; a refresh value that determines what age (in days) the local copy 
+may be before it is refreshed.
 
-=head2  load_custom_filter
+There are dozens of adblock plus filters scattered throughout the internet. You can 
+load them all if you like, though doing so may defeat your purpose. One or two, such 
+as those listed above, should suffice.
+
+A collection of lists is available at http://adblockplus.org/en/subscriptions
+
+=head2 custom_filter
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        load_custom_filter => {
+        custom_filter => {
             path => '/var/named/morehosts',  #path to secondary hosts
         },
     );
 
-The load_custom_filter hashref contains only a path string that defines where the module will 
+The custom_filter hashref contains only a path string that defines where the module will 
 access an addendum of ad hosts to nullify. As mentioned above, a single column is the only 
-acceptable format.
+acceptable format:
+
+    # ad nauseam
+    googlesyndication.com
+    facebook.com
+    twitter.com
+    ...
+    adinfinitum.com
 
 =head1 LEGACY ATTRIBUTES
 

@@ -5,12 +5,12 @@ use lib "../lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.064;
+use Net::DNS::Dynamic::Adfilter 0.065;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.064';
+our $VERSION = '0.065';
 
 my $debug 	      = 0;
 my $verbose	      = 0;
@@ -66,12 +66,17 @@ $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
 
-$args->{load_adblock_filter} = { url => $adblock_filter_url, 
-			   path => $adblock_filter_path,
-			   refresh => $adblock_filter_refresh,
-		         };
+$args->{adblock_stack} = [ { url => $adblock_filter_url, 
+			     path => $adblock_filter_path,
+			     refresh => $adblock_filter_refresh,
+		           },
+#			   { url => "https://easylist-downloads.adblockplus.org/easyprivacy.txt",
+#			     path => '/var/named/easyprivacy.txt',
+#			     refresh => '5',
+#                          },
+		         ],;
 
-$args->{load_custom_filter} = { path => $custom_filter_path };
+$args->{custom_filter} = { path => $custom_filter_path };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -95,28 +100,35 @@ adfilter.pl [options]
         -etc                    use /etc/hosts to answer DNS queries with specified ttl (seconds)
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
 
-   -abf -adblock_filter_url     url to single column adhosts text
+   -abf -adblock_filter_url     url to adblock plus formatted hosts list
                                   defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
         -adblock_filter_path    path to local copy of adhosts text
         -adblock_filter_refresh local copy refresh value (days--defaults to 7)
 
         -custom_filter_path     path to optional single column list of adhosts
 
-  Accept the defaults and run in background:
-     sudo perl adfilter.pl -bg
-     # you must manually kill this process
-
-See also:
-   perldoc Net::DNS::Dynamic::Adfilter
-
 =head1 DESCRIPTION
 
 This script implements a dynamic DNS proxy server for the purpose of filtering advertisements. 
-See Net::DNS::Dynamic::Adfilter for more information.
+
+=head1 CAVEATS
+
+This script loads only one adblock plus host list. The module permits loading of many lists. 
+If this is what you want, you can easily write your own loader script.
+
+That being said, it should be sufficient to run this script, accepting the defaults and 
+running it in the background:
+
+     sudo perl adfilter.pl -bg
+     # you must manually kill this process
 
 =head1 AUTHOR
 
 David Watson <dwatson@cpan.org>
+
+=head1 SEE ALSO
+
+Net::DNS::Dynamic::Adfilter
 
 =head1 COPYRIGHT
 
