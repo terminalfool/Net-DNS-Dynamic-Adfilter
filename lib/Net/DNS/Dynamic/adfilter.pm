@@ -22,8 +22,8 @@ override 'run' => sub {
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
-	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
-	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
+#	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
+#	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
@@ -32,11 +32,11 @@ override 'run' => sub {
 };
 
 #--restore dns settings on mac osx, wireless interface
-before 'signal_handler' => sub {
-	my ( $self ) = shift;
-	system('networksetup -setdnsservers "Wi-Fi" empty');
-	system('networksetup -setsearchdomains "Wi-Fi" empty');
-};
+#before 'signal_handler' => sub {
+#	my ( $self ) = shift;
+#	system('networksetup -setdnsservers "Wi-Fi" empty');
+#	system('networksetup -setsearchdomains "Wi-Fi" empty');
+#};
 #--
 
 around 'reply_handler' => sub {                         # query ad listings
