@@ -18,17 +18,8 @@ my $help	      = 0;
 my $host 	      = '127.0.0.1';
 my $port	      = '53';
 my $background	      = 0;
-my $ask_etc_hosts     = undef;
-my $uid		      = undef;
-my $gid		      = undef;
 my $nameserver	      = undef;
 my $nameserver_port   = 0;
-
-my $adblock_filter_url     = 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext';
-my $adblock_filter_path    = '/var/named/pgl-adblock.txt';
-my $adblock_filter_refresh = 7;
-
-my $custom_filter_path     = '/var/named/morehosts';
 
 GetOptions(
     'debug|d'	               => \$debug,
@@ -37,16 +28,7 @@ GetOptions(
     'host=s'	               => \$host,
     'port|p=s'	               => \$port,
     'background|bg'            => \$background,
-    'etc=s'	               => \$ask_etc_hosts,
-    'uid|u=s'	               => \$uid,
-    'gid|g=s'	               => \$gid,
     'nameserver|ns=s'          => \$nameserver,
-
-    'adblock_filter_url|abf=s' => \$adblock_filter_url,
-    'adblock_filter_path=s'    => \$adblock_filter_path,
-    'adblock_filter_refresh=s' => \$adblock_filter_refresh,
-
-    'custom_filter_path=s'     => \$custom_filter_path,
 );
 
 pod2usage(1) if $help;
@@ -60,23 +42,19 @@ my $args = {};
 $args->{debug}		  = ($verbose ? 1 : ($debug ? 3 : 0));
 $args->{host}		  = $host if $host;
 $args->{port}		  = $port if $port;
-$args->{uid}	          = $uid if $uid;
-$args->{gid}		  = $gid if $gid;
 $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
-$args->{ask_etc_hosts} 	  = { etc => $ask_etc_hosts } if $ask_etc_hosts;
-
-$args->{adblock_stack} = [ { url => $adblock_filter_url, 
-			     path => $adblock_filter_path,
-			     refresh => $adblock_filter_refresh,
-		           },
-#			   { url => "https://easylist-downloads.adblockplus.org/easyprivacy.txt",
-#			     path => '/var/named/easyprivacy.txt',
-#			     refresh => '5',
-#                          },
-		         ],;
-
-$args->{custom_filter} = { path => $custom_filter_path };
+$args->{adblock_stack}    = [
+			       { url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
+			        path => '/var/named/pgl-adblock.txt',
+			        refresh => 7,
+			       },
+			       { url => "https://easylist-downloads.adblockplus.org/easyprivacy.txt",
+			         path => '/var/named/easyprivacy.txt',
+			         refresh => 5,
+			       },
+			    ];
+#$args->{custom_filter}	  = { path => '/var/named/morehosts' };
 
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
@@ -94,18 +72,8 @@ adfilter.pl [options]
    -d   -debug                  enable debug mode
         -host                   host (defaults to localhost)
    -p   -port                   port (defaults to 53)
-   -u   -uid                    run with user id
-   -g   -gid                    run with group id
    -bg  -background             run the process in the background
-        -etc                    use /etc/hosts to answer DNS queries with specified ttl (seconds)
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
-
-   -abf -adblock_filter_url     url to adblock plus formatted hosts list
-                                  defaults to http://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&&mimetype=plaintext
-        -adblock_filter_path    path to local copy of adhosts text
-        -adblock_filter_refresh local copy refresh value (days--defaults to 7)
-
-        -custom_filter_path     path to optional single column list of adhosts
 
 =head1 DESCRIPTION
 
@@ -113,14 +81,12 @@ This script implements a dynamic DNS proxy server for the purpose of filtering a
 
 =head1 CAVEATS
 
-This script loads only one adblock plus host list. The module permits loading of many lists. 
-If this is what you want, you can easily write your own loader script.
-
-That being said, it should be sufficient to run this script, accepting the defaults and 
-running it in the background:
+Though the module permits the use of as many lists as you like, it should be sufficient to run this script using one or two lists, accepting the defaults and running it in the background:
 
      sudo perl adfilter.pl -bg
      # you must manually kill this process
+
+Edit the adblock_stack and custom_filter args to your liking.
 
 =head1 AUTHOR
 
