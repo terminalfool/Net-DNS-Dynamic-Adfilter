@@ -70,13 +70,15 @@ after 'read_config' => sub {
  	my ( $self ) = shift;
         my $cache = ();
 
- 	for ( @{ $self->adblock_stack } ) {
- 	        $cache = { $self->load_adblock_filter($_) };    # adblock plus hosts
-                %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
+        if ($self->adblock_stack) {
+        	for ( @{ $self->adblock_stack } ) {
+ 	                $cache = { $self->load_adblock_filter($_) };    # adblock plus hosts
+                        %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
-	      }
+	        }
+	}
         if ($self->custom_filter) {
- 	        $cache = { $self->load_custom_filter() };     # local, custom hosts
+ 	        $cache = { $self->load_custom_filter() };               # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
