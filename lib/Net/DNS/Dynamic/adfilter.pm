@@ -3,7 +3,7 @@ package Net::DNS::Dynamic::Adfilter;
 our $VERSION = '0.065';
 
 use Moose 2.0403;
-use Net::Address::IP::Local 0.1.2;
+use Net::Address::IP::Local;
 use Net::DNS::Dynamic::Proxyserver 1.2;
 
 use LWP::Simple 6.00 qw($ua getstore);
@@ -192,7 +192,7 @@ either to a specified list of nameservers or to those listed in /etc/resolv.conf
 The module can also load and resolve host definitions found in /etc/hosts as 
 well as hosts defined in a sql database.
 
-The module loads externally maintained lists of ad hosts intended for use  by 
+The module loads externally maintained lists of ad hosts intended for use by 
 Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of 
 the lists focuses only on third-party listings, since these generally define 
 dedicated ad/tracking hosts.
