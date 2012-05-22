@@ -46,8 +46,8 @@ $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
 $args->{adblock_stack}    = [
 			       { url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
-			        path => '/var/named/pgl-adblock.txt',
-			        refresh => 7,
+			         path => '/var/named/pgl-adblock.txt',
+			         refresh => 7,
 			       },
 			       { url => "https://easylist-downloads.adblockplus.org/easyprivacy.txt",
 			         path => '/var/named/easyprivacy.txt',

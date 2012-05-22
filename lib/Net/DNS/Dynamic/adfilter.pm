@@ -221,8 +221,8 @@ upstream to nameservers defined in /etc/resolv.conf.
         adblock_stack => [
             {
             url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
-            path => '/var/named/adhosts',     #path to ad hosts
-            refresh => 7,                     #refresh value in days (default = 7)
+	    path => '/var/named/pgl-adblock.txt',     #path to ad hosts
+            refresh => 7,                             #refresh value in days (default = 7)
             },
 
             {
@@ -234,7 +234,7 @@ upstream to nameservers defined in /etc/resolv.conf.
     );
 
 The adblock_stack arrayref encloses one or more hashrefs composed of three 
-arguments: a url that returns a list of ad hosts in adblock plus format; 
+parameters: a url that returns a list of ad hosts in adblock plus format; 
 a path string that defines where the module will write a local copy of 
 the list; a refresh value that determines what age (in days) the local copy 
 may be before it is refreshed.
