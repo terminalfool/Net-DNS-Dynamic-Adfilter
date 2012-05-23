@@ -116,6 +116,8 @@ sub load_adblock_filter {
 
 	if ($age >= $refresh) {
         	my $url = $_->{url} or die "attempting to refresh $hostsfile failed as {url} is undefined";
+	        $url =~ s/^abp:subscribe\?location=//;
+                $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
 	        $self->log("refreshing hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
 	}
@@ -243,7 +245,9 @@ There are dozens of adblock plus filters scattered throughout the internet. You 
 load them all if you like, though doing so may defeat your purpose. One or two, such 
 as those listed above, should suffice.
 
-A collection of lists is available at http://adblockplus.org/en/subscriptions
+A collection of lists is available at http://adblockplus.org/en/subscriptions. 
+The module will accept standard or abp:subscribe? urls. You can copy the encoded 
+subscription links directly.
 
 =head2 custom_filter
 
