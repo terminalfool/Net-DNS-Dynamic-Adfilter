@@ -116,7 +116,7 @@ sub load_adblock_filter {
 
 	if ($age >= $refresh) {
         	my $url = $_->{url} or die "attempting to refresh $hostsfile failed as {url} is undefined";
-	        $url =~ s/^abp:subscribe\?location=//;
+	        $url =~ s/^\s*abp:subscribe\?location=//;
                 $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
 	        $self->log("refreshing hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
@@ -228,7 +228,7 @@ upstream to nameservers defined in /etc/resolv.conf.
             },
 
             {
-            url => 'https://easylist-downloads.adblockplus.org/easyprivacy.txt',
+            url => 'abp:subscribe?location=https%3A%2F%2Feasylist-downloads.adblockplus.org%2Feasyprivacy.txt&title=EasyPrivacy&requiresLocation=https%3A%2F%2Feasylist-downloads.adblockplus.org%2Feasylist.txt&requiresTitle=EasyList';
             path => '/var/named/easyprivacy.txt',
             refresh => 5,
             },
@@ -246,8 +246,8 @@ load them all if you like, though doing so may defeat your purpose. One or two, 
 as those listed above, should suffice.
 
 A collection of lists is available at http://adblockplus.org/en/subscriptions. 
-The module will accept standard or abp:subscribe? urls. You can copy the encoded 
-subscription links directly.
+The module will accept standard or abp:subscribe? urls. You can cut and paste 
+encoded subscription links directly.
 
 =head2 custom_filter
 
