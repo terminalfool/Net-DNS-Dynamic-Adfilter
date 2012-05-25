@@ -56,6 +56,8 @@ $args->{adblock_stack}    = [
 			    ];
 #$args->{custom_filter}	  = { path => '/var/named/morehosts' };
 
+#$args->{whitelist}	  = { path => '/var/named/whitelist' };
+
 Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
 =head1 NAME
@@ -86,7 +88,7 @@ Though the module permits the use of as many lists as you like, it should be suf
      sudo perl adfilter.pl -bg
      # you must manually kill this process
 
-Edit the adblock_stack and custom_filter args to your liking.
+Edit the adblock_stack, custom_filter and whitelist args to your liking.
 
 =head1 AUTHOR
 

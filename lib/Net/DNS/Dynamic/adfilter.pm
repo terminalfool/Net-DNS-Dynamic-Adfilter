@@ -12,6 +12,7 @@ $ua->agent("");
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
+has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
 has custom_filter => ( is => 'rw', isa => 'HashRef', required => 0 );
 
@@ -72,15 +73,19 @@ after 'read_config' => sub {
 
         if ($self->adblock_stack) {
         	for ( @{ $self->adblock_stack } ) {
- 	                $cache = { $self->load_adblock_filter($_) };    # adblock plus hosts
+ 	                $cache = { $self->load_adblock_filter($_) };                      # adblock plus hosts
                         %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
 	        }
 	}
         if ($self->custom_filter) {
- 	        $cache = { $self->load_custom_filter() };               # local, custom hosts
+ 	        $cache = { $self->parse_single_col_hosts($self->custom_filter->{path}) }; # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
+ 	}
+        if ($self->whitelist) {
+ 	        $cache = { $self->parse_single_col_hosts($self->whitelist->{path}) };     # remove entries
+                for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
  	return;
 };
@@ -118,23 +123,12 @@ sub load_adblock_filter {
         	my $url = $_->{url} or die "attempting to refresh $hostsfile failed as {url} is undefined";
 	        $url =~ s/^\s*abp:subscribe\?location=//;
                 $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+                $url =~ s/&.*$//;
 	        $self->log("refreshing hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
 	}
 
 	%cache = $self->parse_adblock_hosts($hostsfile);
-		
-	return %cache;
-}
-
-sub load_custom_filter {
-	my ( $self ) = shift;
-
-	return unless my $hostsfile = $self->custom_filter->{path};
-
-	my %cache;
-
-	%cache = $self->parse_single_col_hosts($hostsfile);
 		
 	return %cache;
 }
@@ -268,6 +262,19 @@ acceptable format:
     twitter.com
     ...
     adinfinitum.com
+
+=head2 whitelist
+
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
+
+        whitelist => {
+            path => '/var/named/whitelist',  #path to whitelist
+        },
+    );
+
+The whitelist hashref, like the custom_filter hashref, contains only a path 
+parameter to a single column list of hosts. These hosts will be removed from 
+the adfilter.
 
 =head1 LEGACY ATTRIBUTES
 
