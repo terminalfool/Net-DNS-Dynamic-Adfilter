@@ -5,21 +5,21 @@ our $VERSION = '0.065';
 use Moose 2.0403;
 use Net::Address::IP::Local;
 use Net::DNS::Dynamic::Proxyserver 1.2;
-
 use LWP::Simple 6.00 qw($ua getstore);
 $ua->agent("");
 
+#use Data::Dumper;
+#use FileHandle;
+
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
-has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
 has custom_filter => ( is => 'rw', isa => 'HashRef', required => 0 );
+has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
+has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
 
 override 'run' => sub {
-
 	my ( $self ) = shift;
-
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
@@ -28,7 +28,6 @@ override 'run' => sub {
 #--
 
 	$self->log("Nameserver accessible locally @ $localip", 1);
-
 	$self->nameserver->main_loop;
 };
 
@@ -37,11 +36,11 @@ override 'run' => sub {
 #	my ( $self ) = shift;
 #	system('networksetup -setdnsservers "Wi-Fi" empty');
 #	system('networksetup -setsearchdomains "Wi-Fi" empty');
+#	#$self->dump_adfilter; #for debugging
 #};
 #--
 
 around 'reply_handler' => sub {                         # query ad listings
-
         my $orig = shift;
         my $self = shift;
         my ($qname, $qclass, $qtype, $peerhost, $query, $conn) = @_;
@@ -99,6 +98,7 @@ sub query_adfilter {
 
 sub search_ip_in_adfilter {
         my ( $self, $hostname ) = @_;
+
 	my $trim = $hostname;
 	my $sld = $hostname;
 	$trim =~ s/^www\.//i;
@@ -112,7 +112,6 @@ sub search_ip_in_adfilter {
 
 sub load_adblock_filter {
 	my ( $self ) = shift;
-
 	my %cache;
 
 	my $hostsfile = $_->{path} or die "adblock {path} is undefined";
@@ -135,7 +134,6 @@ sub load_adblock_filter {
 
 sub parse_adblock_hosts {
 	my ( $self, $hostsfile ) = @_;
-
 	my %hosts;
 
 	open(HOSTS, $hostsfile) or die "cant open $hostsfile file: $!";
@@ -153,7 +151,6 @@ sub parse_adblock_hosts {
 
 sub parse_single_col_hosts {
 	my ( $self, $hostsfile ) = @_;
-
 	my %hosts;
 
 	open(HOSTS, $hostsfile) or die "cant open $hostsfile file: $!";
@@ -171,6 +168,15 @@ sub parse_single_col_hosts {
 	return %hosts;
 }
 
+#sub dump_adfilter {
+#	my $self = shift;
+
+#	my $str = Dumper(\%{ $self->adfilter });
+#	my $out = new FileHandle ">/var/named/adfilter.txt";
+#	print $out $str;
+#	close $out;
+#}
+
 __PACKAGE__->meta->make_immutable;
 
 1;
@@ -182,7 +188,7 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 =head1 DESCRIPTION
 
 This is a DNS server intended for use as an ad filter for a local area network. 
-Its function is to load lists of ad domains and nullify DNS queries for these 
+Its function is to load lists of ad domains and nullify DNS queries for those 
 domains to the loopback address. Any other DNS queries are proxied upstream, 
 either to a specified list of nameservers or to those listed in /etc/resolv.conf. 
 The module can also load and resolve host definitions found in /etc/hosts as 
