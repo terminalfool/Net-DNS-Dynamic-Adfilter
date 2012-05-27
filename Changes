@@ -1,5 +1,8 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
+0.066 Sun May 27 08:32:24 EDT 2012
+    - parse adblock plus subscription links, add whitelist capability, add data::dumper method
+
 0.065 Wed May 16 21:55:41 EDT 2012
     - use general adblock loader/parser, allow infinite number of adblock lists
 

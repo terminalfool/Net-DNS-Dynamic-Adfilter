@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.065';
+our $VERSION = '0.066';
 
 use Moose 2.0403;
 use Net::Address::IP::Local;
@@ -9,7 +9,6 @@ use LWP::Simple 6.00 qw($ua getstore);
 $ua->agent("");
 
 #use Data::Dumper;
-#use FileHandle;
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
@@ -36,7 +35,6 @@ override 'run' => sub {
 #	my ( $self ) = shift;
 #	system('networksetup -setdnsservers "Wi-Fi" empty');
 #	system('networksetup -setsearchdomains "Wi-Fi" empty');
-#	#$self->dump_adfilter; #for debugging
 #};
 #--
 
@@ -86,6 +84,9 @@ after 'read_config' => sub {
  	        $cache = { $self->parse_single_col_hosts($self->whitelist->{path}) };     # remove entries
                 for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
+
+#	$self->dump_adfilter;
+
  	return;
 };
 
@@ -168,14 +169,14 @@ sub parse_single_col_hosts {
 	return %hosts;
 }
 
-#sub dump_adfilter {
-#	my $self = shift;
+sub dump_adfilter {
+	my $self = shift;
 
-#	my $str = Dumper(\%{ $self->adfilter });
-#	my $out = new FileHandle ">/var/named/adfilter.txt";
-#	print $out $str;
-#	close $out;
-#}
+	my $str = Dumper(\%{ $self->adfilter });
+	open(OUT, ">/var/named/adfilter_dumpfile") or die "cant open dump file: $!";
+	print OUT $str;
+	close OUT;
+}
 
 __PACKAGE__->meta->make_immutable;
 
@@ -199,11 +200,11 @@ Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of
 the lists focuses only on third-party listings, since these generally define 
 dedicated ad/tracking hosts.
 
-A local addendum of hosts can also be specified. In this case, ad host listings 
+A local addendum of hosts can also be specified. In this case, host listings 
 must conform to a one host per line format.
 
-Once running, local network dns queries can be addressed to the host's ip. This ip is 
-echoed to stdout.
+Once running, local network dns queries can be addressed to the host's ip. This 
+ip is echoed to stdout.
 
 =head1 SYNOPSIS
 
@@ -211,8 +212,8 @@ echoed to stdout.
 
     $adfilter->run();
 
-Without any arguments, the module will function simply as a proxy, forwarding all requests 
-upstream to nameservers defined in /etc/resolv.conf.
+Without any arguments, the module will function simply as a proxy, forwarding all 
+requests upstream to nameservers defined in /etc/resolv.conf.
 
 =head1 ATTRIBUTES
 
@@ -280,7 +281,7 @@ acceptable format:
 
 The whitelist hashref, like the custom_filter hashref, contains only a path 
 parameter to a single column list of hosts. These hosts will be removed from 
-the adfilter.
+the filter.
 
 =head1 LEGACY ATTRIBUTES
 
