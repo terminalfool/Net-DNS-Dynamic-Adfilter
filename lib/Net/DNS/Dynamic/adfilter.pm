@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.066';
+our $VERSION = '0.067';
 
 use Moose 2.0403;
 use Net::Address::IP::Local;
@@ -13,7 +13,7 @@ $ua->agent("");
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
-has custom_filter => ( is => 'rw', isa => 'HashRef', required => 0 );
+has blacklist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
 
@@ -22,7 +22,7 @@ override 'run' => sub {
 	my $localip = Net::Address::IP::Local->public_ipv4;
 
 #--switch dns settings on mac osx, wireless interface
-#	system("networksetup -setdnsservers \"Wi-Fi\" 127.0.0.1");
+#	system("networksetup -setdnsservers \"Wi-Fi\" $localip");
 #	system("networksetup -setsearchdomains \"Wi-Fi\" localhost");
 #--
 
@@ -70,18 +70,18 @@ after 'read_config' => sub {
 
         if ($self->adblock_stack) {
         	for ( @{ $self->adblock_stack } ) {
- 	                $cache = { $self->load_adblock_filter($_) };                      # adblock plus hosts
+ 	                $cache = { $self->load_adblock_filter($_) };                  # adblock plus hosts
                         %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
 	        }
 	}
-        if ($self->custom_filter) {
- 	        $cache = { $self->parse_single_col_hosts($self->custom_filter->{path}) }; # local, custom hosts
+        if ($self->blacklist) {
+ 	        $cache = { $self->parse_single_col_hosts($self->blacklist->{path}) }; # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
         if ($self->whitelist) {
- 	        $cache = { $self->parse_single_col_hosts($self->whitelist->{path}) };     # remove entries
+ 	        $cache = { $self->parse_single_col_hosts($self->whitelist->{path}) }; # remove entries
                 for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
 
@@ -250,16 +250,16 @@ A collection of lists is available at http://adblockplus.org/en/subscriptions.
 The module will accept standard or abp:subscribe? urls. You can cut and paste 
 encoded subscription links directly.
 
-=head2 custom_filter
+=head2 blacklist
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        custom_filter => {
-            path => '/var/named/morehosts',  #path to secondary hosts
+        blacklist => {
+            path => '/var/named/blacklist',  #path to secondary hosts
         },
     );
 
-The custom_filter hashref contains only a path string that defines where the module will 
+The blacklist hashref contains only a path string that defines where the module will 
 access an addendum of ad hosts to nullify. As mentioned above, a single column is the only 
 acceptable format:
 
@@ -279,13 +279,36 @@ acceptable format:
         },
     );
 
-The whitelist hashref, like the custom_filter hashref, contains only a path 
-parameter to a single column list of hosts. These hosts will be removed from 
-the filter.
+The whitelist hashref, like the blacklist hashref, contains only a path parameter 
+to a single column list of hosts. These hosts will be removed from the filter.
 
 =head1 LEGACY ATTRIBUTES
 
 From the parent class Net::DNS::Dynamic::Proxyserver.
+
+=head2 host
+
+The IP address to bind to. If not defined, the server binds to all (*). This might not 
+be possible on some networks. Use the host's local ip address.
+
+=head2 port
+
+The tcp & udp port to run the DNS server under. Defaults to 53.
+
+=head2 nameservers
+
+An arrayref of one or more nameservers to forward any DNS queries to. Defaults to nameservers 
+listed in /etc/resolv.conf.
+
+=head2 nameservers_port
+
+Specify the port of the remote nameservers. Defaults to the standard port 53.
+
+=head2 debug
+
+The debug option logs actions to stdout and can be set from 1-3 with increasing 
+output: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
+and (3) resolver logging. 
 
 =head2 ask_etc_hosts
 
@@ -320,21 +343,6 @@ The 'statement' is a SELECT statement, which must return the IP address for the 
 replaced by the actual query name and type. Your statement must return the IP address as the 
 first column in the result.
 
-=head2 debug
-
-The debug option logs actions to stdout and can be set from 1-3 with increasing 
-output: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
-and (3) resolver logging. 
-
-=head2 host
-
-The IP address to bind to. If not defined, the server binds to all (*). This might not 
-be possible on some networks. Use 127.0.0.1.
-
-=head2 port
-
-The tcp & udp port to run the DNS server under. Defaults to 53.
-
 =head2 uid
 
 The optional user id to switch to after the socket has been created.
@@ -343,20 +351,11 @@ The optional user id to switch to after the socket has been created.
 
 The optional group id to switch to after the socket has been created.
 
-=head2 nameservers
-
-An arrayref of one or more nameservers to forward any DNS queries to. Defaults to nameservers 
-listed in /etc/resolv.conf.
-
-=head2 nameservers_port
-
-Specify the port of the remote nameservers. Defaults to the standard port 53.
-
 =head1 CAVEATS
 
-It will be necessary to manually set the host's network dns settings to 127.0.0.1 in 
-order to take advantage of the filtering. On Mac hosts, uncommenting the I<networksetup> 
-system calls in the module will automate this.
+It will be necessary to manually set dns settings to the host's local ip in order to take 
+advantage of the filtering. On Mac hosts, uncommenting the I<networksetup> system calls 
+in the module will automate this.
 
 =head1 AUTHOR
 

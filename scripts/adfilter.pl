@@ -5,18 +5,20 @@ use lib "../lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.066;
+use Net::DNS::Dynamic::Adfilter 0.067;
+use Net::Address::IP::Local;
 
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.066';
+our $VERSION = '0.067';
 
+#my $host 	      = undef;                    # defaults to all (*)
+my $host = Net::Address::IP::Local->public_ipv4; #set to local ip
+my $port	      = undef;                   #defaults to 53
 my $debug 	      = 0;
 my $verbose	      = 0;
 my $help	      = 0;
-my $host 	      = '127.0.0.1';
-my $port	      = '53';
 my $background	      = 0;
 my $nameserver	      = undef;
 my $nameserver_port   = 0;
@@ -54,7 +56,7 @@ $args->{adblock_stack}    = [
 			         refresh => 5,
 			       },
 			    ];
-#$args->{custom_filter}	  = { path => '/var/named/morehosts' };
+#$args->{blacklist}	  = { path => '/var/named/blacklist' };
 
 #$args->{whitelist}	  = { path => '/var/named/whitelist' };
 
@@ -88,7 +90,7 @@ Though the module permits the use of as many lists as you like, it should be suf
      sudo perl adfilter.pl -bg
      # you must manually kill this process
 
-Edit the adblock_stack, custom_filter and whitelist args to your liking.
+Edit the adblock_stack, blacklist and whitelist args to your liking.
 
 =head1 AUTHOR
 
