@@ -200,8 +200,8 @@ Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of
 the lists focuses only on third-party listings, since these generally define 
 dedicated ad/tracking hosts.
 
-A local addendum of hosts can also be specified. In this case, host listings 
-must conform to a one host per line format.
+A locally maintained blacklist/whitelist can also be loaded. In this case, host 
+listings must conform to a one host per line format.
 
 Once running, local network dns queries can be addressed to the host's ip. This 
 ip is echoed to stdout.
@@ -242,9 +242,9 @@ a path string that defines where the module will write a local copy of
 the list; a refresh value that determines what age (in days) the local copy 
 may be before it is refreshed.
 
-There are dozens of adblock plus filters scattered throughout the internet. You can 
-load them all if you like, though doing so may defeat your purpose. One or two, such 
-as those listed above, should suffice.
+There are dozens of adblock plus filters scattered throughout the internet. 
+You can load as many as you like, though one or two lists such as those listed 
+above should suffice.
 
 A collection of lists is available at http://adblockplus.org/en/subscriptions. 
 The module will accept standard or abp:subscribe? urls. You can cut and paste 
@@ -260,8 +260,8 @@ encoded subscription links directly.
     );
 
 The blacklist hashref contains only a path string that defines where the module will 
-access an addendum of ad hosts to nullify. As mentioned above, a single column is the only 
-acceptable format:
+access a local list of ad hosts to nullify. As mentioned above, a single column is the 
+only acceptable format:
 
     # ad nauseam
     googlesyndication.com

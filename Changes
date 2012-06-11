@@ -1,5 +1,8 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
+0.067 Mon Jun 11 10:22:02 EDT 2012
+    - fix addressing/sharing of dns server
+
 0.066 Sun May 27 08:32:24 EDT 2012
     - parse adblock plus subscription links, add whitelist capability, add data::dumper method
 
