@@ -1,5 +1,8 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
+0.068 Tue Jun 12 17:00:09 EDT 2012
+    - minor edits, improve kwalitee rating
+
 0.067 Mon Jun 11 10:22:02 EDT 2012
     - fix addressing/sharing of dns server
 
