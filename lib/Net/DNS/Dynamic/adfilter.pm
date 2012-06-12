@@ -1,6 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.067';
+our $VERSION = '0.068';
 
 use Moose 2.0403;
 use Net::Address::IP::Local;
@@ -197,8 +197,8 @@ well as hosts defined in a sql database.
 
 The module loads externally maintained lists of ad hosts intended for use by 
 Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of 
-the lists focuses only on third-party listings, since these generally define 
-dedicated ad/tracking hosts.
+the lists focuses only on third-party listings, since these define dedicated 
+advertising and tracking hosts.
 
 A locally maintained blacklist/whitelist can also be loaded. In this case, host 
 listings must conform to a one host per line format.
