@@ -248,7 +248,7 @@ above should suffice.
 
 A collection of lists is available at http://adblockplus.org/en/subscriptions. 
 The module will accept standard or abp:subscribe? urls. You can cut and paste 
-encoded subscription links directly.
+encoded links directly.
 
 =head2 blacklist
 
@@ -302,7 +302,7 @@ listed in /etc/resolv.conf.
 
 =head2 nameservers_port
 
-Specify the port of the remote nameservers. Defaults to the standard port 53.
+The port of the remote nameservers. Defaults 53.
 
 =head2 debug
 

@@ -74,7 +74,7 @@ adfilter.pl [options]
    -h   -help                   display this help
    -v   -verbose                show server activity
    -d   -debug                  enable debug mode
-        -host                   host (defaults to localhost)
+        -host                   host (defaults to all *)
    -p   -port                   port (defaults to 53)
    -bg  -background             run the process in the background
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
