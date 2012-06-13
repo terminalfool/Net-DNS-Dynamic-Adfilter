@@ -64,7 +64,7 @@ Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
 =head1 NAME
 
-adfilter.pl - Sample interface script to Net::DNS::Dynamic::Adfilter
+adfilter.pl - Sample script using Net::DNS::Dynamic::Adfilter
 
 =head1 SYNOPSIS
 
@@ -81,7 +81,7 @@ adfilter.pl [options]
 
 =head1 DESCRIPTION
 
-This script implements a dynamic DNS proxy server for the purpose of filtering advertisements. 
+This script implements a dynamic DNS proxy server for the purpose of blocking advertisements. 
 
 =head1 CAVEATS
 

@@ -196,8 +196,8 @@ The module can also load and resolve host definitions found in /etc/hosts as
 well as hosts defined in a sql database.
 
 The module loads externally maintained lists of ad hosts intended for use by 
-Adblock Plus, a popular ad filtering extension for the Firefox browser. Use of 
-the lists focuses only on third-party listings, since these define dedicated 
+Adblock Plus, a popular ad filtering extension for the Firefox browser. Use 
+of the lists focuses only on third-party listings that define dedicated 
 advertising and tracking hosts.
 
 A locally maintained blacklist/whitelist can also be loaded. In this case, host 
