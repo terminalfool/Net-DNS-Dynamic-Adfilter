@@ -1,5 +1,8 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
+{{$NEXT}}
+    - add dns switching
+
 0.068 Tue Jun 12 17:00:09 EDT 2012
     - minor edits, improve kwalitee rating
 

@@ -5,23 +5,19 @@ use lib "../lib/";
 use strict;
 use warnings;
 
-use Net::DNS::Dynamic::Adfilter 0.068;
-use Net::Address::IP::Local;
-
+use Net::DNS::Dynamic::Adfilter;
 use Getopt::Long;
 use Pod::Usage;
 
-our $VERSION = '0.068';
-
-#my $host 	      = undef;                    # defaults to all (*)
-my $host = Net::Address::IP::Local->public_ipv4; #set to local ip
-my $port	      = undef;                   #defaults to 53
+my $host 	      = undef;         # defaults to (local ip)
+my $port	      = undef;         # defaults to 53
 my $debug 	      = 0;
 my $verbose	      = 0;
 my $help	      = 0;
 my $background	      = 0;
 my $nameserver	      = undef;
-my $nameserver_port   = 0;
+my $nameserver_port   = undef;
+my $setlocaldns       = undef;
 
 GetOptions(
     'debug|d'	               => \$debug,
@@ -31,6 +27,7 @@ GetOptions(
     'port|p=s'	               => \$port,
     'background|bg'            => \$background,
     'nameserver|ns=s'          => \$nameserver,
+    'setlocaldns|sld'	       => \$setlocaldns,
 );
 
 pod2usage(1) if $help;
@@ -46,6 +43,7 @@ $args->{host}		  = $host if $host;
 $args->{port}		  = $port if $port;
 $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
+$args->{setlocaldns}	  = 1 if $setlocaldns;
 $args->{adblock_stack}    = [
 			       { url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
 			         path => '/var/named/pgl-adblock.txt',
@@ -56,7 +54,7 @@ $args->{adblock_stack}    = [
 			         refresh => 5,
 			       },
 			    ];
-#$args->{blacklist}	  = { path => '/var/named/blacklist' };
+$args->{blacklist}	  = { path => '/var/named/blacklist' };
 
 #$args->{whitelist}	  = { path => '/var/named/whitelist' };
 
@@ -74,10 +72,11 @@ adfilter.pl [options]
    -h   -help                   display this help
    -v   -verbose                show server activity
    -d   -debug                  enable debug mode
-        -host                   host (defaults to all *)
+        -host                   host (defaults to local ip)
    -p   -port                   port (defaults to 53)
    -bg  -background             run the process in the background
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
+   -sld -setlocaldns            adjust dns settings on local host
 
 =head1 DESCRIPTION
 
@@ -85,7 +84,7 @@ This script implements a dynamic DNS proxy server for the purpose of blocking ad
 
 =head1 CAVEATS
 
-Though the module permits the use of as many lists as you like, it should be sufficient to run this script using one or two lists, accepting the defaults and running it in the background:
+Though the module permits the use of as many lists as you like, it should be sufficient to use one or two lists, accept the defaults and run it in the background:
 
      sudo perl adfilter.pl -bg
      # you must manually kill this process
