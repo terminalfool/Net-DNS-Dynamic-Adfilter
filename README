@@ -8,7 +8,6 @@ The module loads externally maintained lists of ad hosts intended for use by
 Adblock Plus, a popular ad filtering extension for the Firefox browser. A 
 locally maintained blacklist/whitelist can also be loaded.
 
-Once running, local network dns queries can be addressed to the host's ip. This
-ip is echoed to stdout.
+Once running, local network dns queries can be addressed to the host's ip.
 
 See sample script: scripts/adfilter.pl

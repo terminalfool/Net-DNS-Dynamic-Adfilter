@@ -8,7 +8,7 @@ use Capture::Tiny qw(capture);
 use LWP::Simple qw($ua getstore);
 $ua->agent("");
 
-#use Data::Dumper;
+use Data::Dumper;
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
@@ -52,7 +52,7 @@ around 'reply_handler' => sub {                         # query ad listings
  		if (my $ip = $self->query_adfilter( $qname, $qtype )) {
 
                  	$self->log("received query from $peerhost: qtype '$qtype', qname '$qname'");
- 			$self->log("[local host listings] resolved $qname to $ip NOERROR");
+ 			$self->log("[local] resolved $qname to $ip NOERROR");
 
  			my ($ttl, $rdata) = ( 300, $ip );
         
@@ -87,7 +87,7 @@ after 'read_config' => sub {
                 for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
 
-#	$self->dump_adfilter;
+	$self->dump_adfilter;
 
  	return;
 };
@@ -105,7 +105,7 @@ sub search_ip_in_adfilter {
 	my $trim = $hostname;
 	my $sld = $hostname;
 	$trim =~ s/^www\.//i;
-	$sld =~ s/^.*\.(\w+\.\w+)$/$1/;
+	$sld =~ s/^.*\.(.+\..+)$/$1/;
 
 	return '::1' if ( exists $self->adfilter->{$hostname} ||
 			  exists $self->adfilter->{$trim} ||
@@ -143,7 +143,7 @@ sub parse_adblock_hosts {
 
 	while (<HOSTS>) {
 	        chomp;
-		next unless s/^\|\|((\w+\.)+\w+)\^(\$third-party)?$/$1/;  #extract adblock host
+		next unless s/^\|\|(.*)\^(\$third-party)?$/$1/;  #extract adblock host
 		$hosts{$_}++;
 	}
 
