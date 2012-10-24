@@ -8,7 +8,7 @@ use Capture::Tiny qw(capture);
 use LWP::Simple qw($ua getstore);
 $ua->agent("");
 
-use Data::Dumper;
+#use Data::Dumper;
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
@@ -87,7 +87,7 @@ after 'read_config' => sub {
                 for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
 
-	$self->dump_adfilter;
+#	$self->dump_adfilter;
 
  	return;
 };
