@@ -54,7 +54,7 @@ $args->{adblock_stack}    = [
 			         refresh => 5,
 			       },
 			    ];
-$args->{blacklist}	  = { path => '/var/named/blacklist' };
+#$args->{blacklist}	  = { path => '/var/named/blacklist' };
 
 #$args->{whitelist}	  = { path => '/var/named/whitelist' };
 
