@@ -17,7 +17,7 @@ my $help	      = 0;
 my $background	      = 0;
 my $nameserver	      = undef;
 my $nameserver_port   = undef;
-my $setlocaldns       = undef;
+my $setdns            = undef;
 
 GetOptions(
     'debug|d'	               => \$debug,
@@ -27,7 +27,7 @@ GetOptions(
     'port|p=s'	               => \$port,
     'background|bg'            => \$background,
     'nameserver|ns=s'          => \$nameserver,
-    'setlocaldns|sld'	       => \$setlocaldns,
+    'setdns'    	       => \$setdns,
 );
 
 pod2usage(1) if $help;
@@ -43,7 +43,7 @@ $args->{host}		  = $host if $host;
 $args->{port}		  = $port if $port;
 $args->{nameservers}	  = [ $nameserver ] if $nameserver;
 $args->{nameservers_port} = $nameserver_port if $nameserver_port;
-$args->{setlocaldns}	  = 1 if $setlocaldns;
+$args->{setdns}	          = 1 if $setdns;
 $args->{adblock_stack}    = [
 			       { url => 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=0&startdate[day]=&startdate[month]=&startdate[year]=&mimetype=plaintext',
 			         path => '/var/named/pgl-adblock.txt',
@@ -76,7 +76,7 @@ adfilter.pl [options]
    -p   -port                   port (defaults to 53)
    -bg  -background             run the process in the background
    -ns  -nameserver             forward queries to this nameserver (<ip>:<port>)
-   -sld -setlocaldns            adjust dns settings on local host
+        -setdns                 adjust dns settings on local host
 
 =head1 DESCRIPTION
 

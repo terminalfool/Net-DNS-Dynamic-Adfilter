@@ -16,19 +16,20 @@ has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
 has blacklist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
 has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
+has host => ( is => 'rw', isa => 'Str', required => 0, default => sub { Sys::HostIP->ip } );
 has network => ( is => 'rw', isa => 'HashRef', required => 0 );
-has setlocaldns => ( is => 'rw', isa => 'Int', required => 0, default => 0 );
+has setdns => ( is => 'rw', isa => 'Int', required => 0, default => 0 );
 
 override 'run' => sub {
 	my ( $self ) = shift;
 
-	my $host = Sys::HostIP->new;
-	my %devices = reverse %{ $host->interfaces };
-	my $hostip = $host->ip;
+	if ( $self->setdns ) {
+	        my $host = Sys::HostIP->new;
+	        my %devices = reverse %{ $host->interfaces };
+                $self->{network}->{interface} = $devices{ $self->host };
 
-	$self->{network}->{interface} = $devices{ $hostip };
-        $self->{host} = $hostip if $self->{host} eq '*';
-        $self->set_local_dns if $self->setlocaldns;
+                $self->set_local_dns;
+	}
 
 	$self->nameserver->main_loop;
 };
@@ -36,7 +37,7 @@ override 'run' => sub {
 before 'signal_handler' => sub {
 	my ( $self ) = shift;
 
-        $self->restore_local_dns if $self->setlocaldns;
+        $self->restore_local_dns if $self->setdns;
 };
 
 around 'reply_handler' => sub {                         # query ad listings
@@ -205,7 +206,7 @@ sub set_local_dns {
 
 	if ($stderr||$result[0]) {
 	       $self->log("switching of local dns settings failed: $@", 1);
-	       undef $self->setlocaldns;
+	       undef $self->setdns;
 	} else {
 	       $self->log("local dns settings ($self->{network}->{interface}) switched", 1);
 	}
@@ -367,9 +368,9 @@ The default port is 53.
 An arrayref of one or more nameservers to forward any DNS queries to. Defaults to nameservers 
 listed in /etc/resolv.conf. The default port is 53.
 
-=head2 setlocaldns
+=head2 setdns
 
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new( setlocaldns  => '1' } ); #defaults to '0'
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new( setdns  => '1' } ); #defaults to '0'
 
 If set, the module attempts to set local dns settings to the host's ip. This may or may not work
 if there are multiple active interfaces. You may need to manually adjust your local dns settings.
