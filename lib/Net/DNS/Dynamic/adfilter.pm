@@ -1,7 +1,5 @@
 package Net::DNS::Dynamic::Adfilter;
 
-our $VERSION = '0.069';
-
 use Moose;
 use Sys::HostIP;
 use Capture::Tiny qw(capture);
@@ -264,19 +262,18 @@ This is a DNS server intended for use as an ad filter for a local area network.
 Its function is to load lists of ad domains and nullify DNS queries for those 
 domains to the loopback address. Any other DNS queries are proxied upstream, 
 either to a specified list of nameservers or to those listed in /etc/resolv.conf. 
-The module can also load and resolve host definitions found in /etc/hosts as 
-well as hosts defined in a sql database.
 
 The module loads externally maintained lists of ad hosts intended for use by 
-Adblock Plus, a popular ad filtering extension for the Firefox browser. Use 
-of the lists focuses only on third-party listings that define dedicated 
-advertising and tracking hosts.
+the Adblock Plus firefox extension. Use of the lists focuses only on third-party 
+listings that define dedicated advertising and tracking hosts.
 
 A locally maintained blacklist/whitelist can also be loaded. In this case, host 
 listings must conform to a one host per line format.
 
-Once running, local network dns queries can be addressed to the host's ip. This 
-ip is echoed to stdout.
+Once running, local network dns queries can be addressed to the host's ip.
+
+See installed sample script: /usr/local/bin/adfilter.pl
+(scripts/adfilter.pl in the distribution)
 
 =head1 SYNOPSIS
 
@@ -284,7 +281,7 @@ ip is echoed to stdout.
 
     $adfilter->run();
 
-Without any arguments, the module will function simply as a proxy, forwarding all 
+Without any attributes, the module will function simply as a proxy, forwarding all 
 requests upstream to nameservers defined in /etc/resolv.conf.
 
 =head1 ATTRIBUTES
@@ -316,7 +313,7 @@ may be before it is refreshed.
 
 There are dozens of adblock plus filters scattered throughout the internet. 
 You can load as many as you like, though one or two lists such as those listed 
-above should suffice.
+above should do.
 
 A collection of lists is available at http://adblockplus.org/en/subscriptions. 
 The module will accept standard or abp:subscribe? urls. You can cut and paste 
@@ -383,47 +380,6 @@ The debug option logs actions to stdout and can be set from 1-3 with increasing
 output: the module will feedback (1) adfilter.pm logging, (2) nameserver logging, 
 and (3) resolver logging. 
 
-=head2 ask_etc_hosts
-
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new(
-
-        ask_etc_hosts => { ttl => 3600 },	 #if set, parse and resolve /etc/hosts; ttl in seconds
-    );
-
-Definition of ask_etc_hosts activates parsing of /etc/hosts and resolution of matching queries 
-with a lifespan of ttl (in seconds). See Net::DNS::Dynamic::Proxyserver for more info.
-
-=head2 ask_sql_hosts
-
-If defined, the module will query an sql database of hosts, provided the database file can be 
-accessed (read/write) with the defined uid/gid. See Net::DNS::Dynamic::Proxyserver for more info.
-
-    my $adfilter = Net::DNS::Dynamic::Adfilter->new( 
-
-        ask_sql => {
-  	    ttl => 60, 
-	    dsn => 'DBI:mysql:database=db_name;host=localhost;port=3306',
-	    user => 'my_user',
-	    pass => 'my_password',
-	    statement => "SELECT ip FROM hosts WHERE hostname='{qname}' AND type='{qtype}'"
-        },
-        uid => 65534, #only if necessary
-        gid => 65534,
-    );
-
-The 'statement' is a SELECT statement, which must return the IP address for the given query name 
-(qname) and query type (qtype, like 'A' or 'MX'). The placeholders {qname} and {qtype} will be 
-replaced by the actual query name and type. Your statement must return the IP address as the 
-first column in the result.
-
-=head2 uid
-
-The optional user id to switch to after the socket has been created.
-
-=head2 gid
-
-The optional group id to switch to after the socket has been created.
-
 =head1 CAVEATS
 
 Written and tested under darwin only.
@@ -434,7 +390,7 @@ David Watson <dwatson@cpan.org>
 
 =head1 SEE ALSO
 
-scripts/adfilter.pl in the distribution
+Installed sample script: /usr/local/bin/adfilter.pl (scripts/adfilter.pl in the distribution)
 
 Net::DNS::Dynamic::Proxyserver
 
