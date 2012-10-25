@@ -272,9 +272,6 @@ listings must conform to a one host per line format.
 
 Once running, local network dns queries can be addressed to the host's ip.
 
-See installed sample script: /usr/local/bin/adfilter.pl
-(scripts/adfilter.pl in the distribution)
-
 =head1 SYNOPSIS
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new();
