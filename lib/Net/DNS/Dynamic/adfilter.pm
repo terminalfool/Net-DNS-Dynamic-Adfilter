@@ -10,13 +10,13 @@ $ua->agent("");
 
 extends 'Net::DNS::Dynamic::Proxyserver';
 
-has adblock_stack => ( is => 'rw', isa => 'ArrayRef', required => 0 );
-has blacklist => ( is => 'rw', isa => 'HashRef', required => 0 );
-has whitelist => ( is => 'rw', isa => 'HashRef', required => 0 );
+has adblock_stack => ( is => 'ro', isa => 'ArrayRef', required => 0 );
+has blacklist => ( is => 'ro', isa => 'HashRef', required => 0 );
+has whitelist => ( is => 'ro', isa => 'HashRef', required => 0 );
 has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
-has host => ( is => 'rw', isa => 'Str', required => 0, default => sub { Sys::HostIP->ip } );
 has network => ( is => 'rw', isa => 'HashRef', required => 0 );
 has setdns => ( is => 'rw', isa => 'Int', required => 0, default => 0 );
+has '+host' => ( default => sub { Sys::HostIP->ip } );
 
 override 'run' => sub {
 	my ( $self ) = shift;
@@ -206,7 +206,7 @@ sub set_local_dns {
 	       $self->log("switching of local dns settings failed: $@", 1);
 	       undef $self->setdns;
 	} else {
-	       $self->log("local dns settings ($self->{network}->{interface}) switched", 1);
+	       $self->log("local dns ($self->{network}->{interface}) addresses $self->{host}", 1);
 	}
 }
 
