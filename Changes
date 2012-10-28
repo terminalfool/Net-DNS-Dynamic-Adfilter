@@ -1,6 +1,9 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 {{$NEXT}}
+    - fix for lwp 6.0 ca
+
+0.069 Thu Oct 25 12:32:04 EDT 2012
     - dns switching; fix regexs, host default 
 
 0.068 Tue Jun 12 17:00:09 EDT 2012
