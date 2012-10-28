@@ -5,6 +5,7 @@ use Sys::HostIP;
 use Capture::Tiny qw(capture);
 use LWP::Simple qw($ua getstore);
 $ua->agent("");
+use Mozilla::CA;
 
 #use Data::Dumper;
 
@@ -18,18 +19,10 @@ has network => ( is => 'rw', isa => 'HashRef', required => 0 );
 has setdns => ( is => 'rw', isa => 'Int', required => 0, default => 0 );
 has '+host' => ( default => sub { Sys::HostIP->ip } );
 
-override 'run' => sub {
+before 'run' => sub {
 	my ( $self ) = shift;
 
-	if ( $self->setdns ) {
-	        my $host = Sys::HostIP->new;
-	        my %devices = reverse %{ $host->interfaces };
-                $self->{network}->{interface} = $devices{ $self->host };
-
-                $self->set_local_dns;
-	}
-
-	$self->nameserver->main_loop;
+        $self->set_local_dns if $self->setdns;
 };
 
 before 'signal_handler' => sub {
@@ -122,7 +115,7 @@ sub load_adblock_filter {
 	if ($age >= $refresh) {
         	my $url = $_->{url} or die "attempting to refresh $hostsfile failed as {url} is undefined";
 	        $url =~ s/^\s*abp:subscribe\?location=//;
-                $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+                $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg; #url unencode
                 $url =~ s/&.*$//;
 	        $self->log("refreshing hosts: $hostsfile", 1);
 	        getstore($url, $hostsfile);
@@ -175,6 +168,10 @@ sub set_local_dns {
 	my $stdout;
 	my $stderr;
 	my @result;
+
+	my $host = Sys::HostIP->new;
+	my %devices = reverse %{ $host->{if_info} };
+        $self->{network}->{interface} = $devices{ $self->host };
 
         if ($^O	=~ /darwin/i) {                                                          # is osx
 	        eval {
