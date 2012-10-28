@@ -292,9 +292,9 @@ requests upstream to nameservers defined in /etc/resolv.conf.
             },
 
             {
-            url => 'abp:subscribe?location=https%3A%2F%2Feasylist-downloads.adblockplus.org%2Feasyprivacy.txt&title=EasyPrivacy&requiresLocation=https%3A%2F%2Feasylist-downloads.adblockplus.org%2Feasylist.txt&requiresTitle=EasyList';
-            path => '/var/named/easyprivacy.txt',
-            refresh => 5,
+	    url => "abp:subscribe?location=https%3A%2F%2Feasylist-downloads.adblockplus.org%2Feasylist.txt&title=EasyList",
+	    path => '/var/named/easylist.txt',
+	    refresh => 5,
             },
         ],
     );
