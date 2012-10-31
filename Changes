@@ -1,6 +1,9 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 {{$NEXT}}
+    - simplify script installation
+
+0.070 Sun Oct 28 11:56:48 EDT 2012
     - fix for lwp 6.0 ca
 
 0.069 Thu Oct 25 12:32:04 EDT 2012
