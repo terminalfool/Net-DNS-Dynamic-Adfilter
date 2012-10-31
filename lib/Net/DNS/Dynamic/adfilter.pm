@@ -255,14 +255,14 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 =head1 DESCRIPTION
 
-This is a DNS server intended for use as an ad filter for a local area network. 
-Its function is to load lists of ad domains and nullify DNS queries for those 
-domains to the loopback address. Any other DNS queries are proxied upstream, 
-either to a specified list of nameservers or to those listed in /etc/resolv.conf. 
+This is a DNS ad filter for a local area network. Its function is to load 
+lists of ad domains and nullify DNS queries for those domains to the loopback 
+address. Any other DNS queries are proxied upstream, either to a specified 
+list of nameservers or to those listed in /etc/resolv.conf. 
 
-The module loads externally maintained lists of ad hosts intended for use by 
-the Adblock Plus firefox extension. Use of the lists focuses only on third-party 
-listings that define dedicated advertising and tracking hosts.
+The module loads externally maintained lists of ad hosts intended for use 
+by the I<adblock plus> Firefox extension. Use of the lists focuses only on 
+third-party listings that define dedicated advertising and tracking hosts.
 
 A locally maintained blacklist/whitelist can also be loaded. In this case, host 
 listings must conform to a one host per line format.
@@ -275,7 +275,7 @@ Once running, local network dns queries can be addressed to the host's ip.
 
     $adfilter->run();
 
-Without any attributes, the module will function simply as a proxy, forwarding all 
+Without any parameters, the module will function simply as a proxy, forwarding all 
 requests upstream to nameservers defined in /etc/resolv.conf.
 
 =head1 ATTRIBUTES
@@ -375,7 +375,7 @@ and (3) resolver logging.
 
 =head1 CAVEATS
 
-Written and tested under darwin only.
+Tested under darwin only.
 
 =head1 AUTHOR
 
@@ -383,7 +383,7 @@ David Watson <dwatson@cpan.org>
 
 =head1 SEE ALSO
 
-Installed sample script: /usr/local/bin/adfilter.pl (scripts/adfilter.pl in the distribution)
+Installed script: /usr/local/bin/adfilter.pl (scripts/adfilter.pl in the distribution)
 
 Net::DNS::Dynamic::Proxyserver
 
