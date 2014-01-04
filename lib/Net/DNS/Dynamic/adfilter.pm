@@ -12,11 +12,12 @@ use Mozilla::CA;
 extends 'Net::DNS::Dynamic::Proxyserver';
 
 has adblock_stack => ( is => 'ro', isa => 'ArrayRef', required => 0 );
-has blacklist => ( is => 'ro', isa => 'HashRef', required => 0 );
-has whitelist => ( is => 'ro', isa => 'HashRef', required => 0 );
+has blacklist => ( is => 'ro', isa => 'Str', required => 0 );
+has whitelist => ( is => 'ro', isa => 'Str', required => 0 );
+has loopback => ( is => 'ro', isa => 'Str', required => 0 );
 has adfilter => ( is => 'rw', isa => 'HashRef', required => 0 );
 has network => ( is => 'rw', isa => 'HashRef', required => 0 );
-has setdns => ( is => 'rw', isa => 'Int', required => 0, default => 0 );
+has setdns => ( is => 'rw', isa => 'Bool', required => 0, default => 0 );
 has '+host' => ( default => sub { Sys::HostIP->ip } );
 
 before 'run' => sub {
@@ -69,12 +70,12 @@ after 'read_config' => sub {
 	        }
 	}
         if ($self->blacklist) {
- 	        $cache = { $self->parse_single_col_hosts($self->blacklist->{path}) }; # local, custom hosts
+ 	        $cache = { $self->parse_single_col_hosts($self->blacklist) }; # local, custom hosts
                 %{ $self->{adfilter} } = $self->adfilter ? ( %{ $self->{adfilter} }, %{ $cache } ) 
                                          : %{ $cache };
  	}
         if ($self->whitelist) {
- 	        $cache = { $self->parse_single_col_hosts($self->whitelist->{path}) }; # remove entries
+ 	        $cache = { $self->parse_single_col_hosts($self->whitelist) }; # remove entries
                 for ( keys %{ $cache } ) { delete ( $self->{adfilter}->{$_} ) };
  	}
 
@@ -93,12 +94,13 @@ sub query_adfilter {
 sub search_ip_in_adfilter {
         my ( $self, $hostname ) = @_;
 
+        my $loopback = $self->loopback || '127.0.0.1';
 	my $trim = $hostname;
 	my $sld = $hostname;
 	$trim =~ s/^www\.//i;
 	$sld =~ s/^.*\.(.+\..+)$/$1/;
 
-	return '::1' if ( exists $self->adfilter->{$hostname} ||
+	return $loopback if ( exists $self->adfilter->{$hostname} ||
 			  exists $self->adfilter->{$trim} ||
 			  exists $self->adfilter->{$sld} );
         return;
@@ -256,13 +258,17 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 =head1 DESCRIPTION
 
 This is a DNS ad filter for a local area network. Its function is to load 
-lists of ad domains and nullify DNS queries for those domains to the loopback 
+lists of ad domains and nullify DNS queries for those domains to a loopback 
 address. Any other DNS queries are proxied upstream, either to a specified 
 list of nameservers or to those listed in /etc/resolv.conf. 
 
 The module loads externally maintained lists of ad hosts intended for use 
 by the I<adblock plus> Firefox extension. Use of the lists focuses only on 
 third-party listings that define dedicated advertising and tracking hosts.
+
+A collection of lists is available at http://adblockplus.org/en/subscriptions. 
+The module will accept standard or abp:subscribe? urls. You can cut and paste 
+encoded links directly.
 
 A locally maintained blacklist/whitelist can also be loaded. In this case, host 
 listings must conform to a one host per line format.
@@ -308,22 +314,15 @@ There are dozens of adblock plus filters scattered throughout the internet.
 You can load as many as you like, though one or two lists such as those listed 
 above should do.
 
-A collection of lists is available at http://adblockplus.org/en/subscriptions. 
-The module will accept standard or abp:subscribe? urls. You can cut and paste 
-encoded links directly.
-
 =head2 blacklist
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        blacklist => {
-            path => '/var/named/blacklist',  #path to secondary hosts
-        },
+        blacklist => '/var/named/blacklist',  #path to secondary hosts
     );
 
-The blacklist hashref contains only a path string that defines where the module will 
-access a local list of ad hosts to nullify. As mentioned above, a single column is the 
-only acceptable format:
+A path string that defines where the module will access a local list of ad hosts. 
+A single column is the only acceptable format:
 
     # ad nauseam
     googlesyndication.com
@@ -336,13 +335,10 @@ only acceptable format:
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        whitelist => {
-            path => '/var/named/whitelist',  #path to whitelist
-        },
+        whitelist => '/var/named/whitelist',  #path to whitelist
     );
 
-The whitelist hashref, like the blacklist hashref, contains only a path parameter 
-to a single column list of hosts. These hosts will be removed from the filter.
+A path string to a single column list of hosts. These hosts will be removed from the filter.
 
 =head2 host, port
 
@@ -364,6 +360,12 @@ listed in /etc/resolv.conf. The default port is 53.
 
 If set, the module attempts to set local dns settings to the host's ip. This may or may not work
 if there are multiple active interfaces. You may need to manually adjust your local dns settings.
+
+=head2 loopback
+
+    my $adfilter = Net::DNS::Dynamic::Adfilter->new( loopback  => '127.255.255.254' ); #defaults to '127.0.0.1'
+
+If set, the nameserver will return this address rather than the standard loopback address.
 
 =head2 debug
 
