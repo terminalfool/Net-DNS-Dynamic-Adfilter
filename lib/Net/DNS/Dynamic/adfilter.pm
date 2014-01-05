@@ -352,7 +352,8 @@ The default port is 53.
     my $adfilter = Net::DNS::Dynamic::Adfilter->new( nameservers => [ $ns1, $ns2, ], nameservers_port => $port );
 
 An arrayref of one or more nameservers to forward any DNS queries to. Defaults to nameservers 
-listed in /etc/resolv.conf. The default port is 53.
+listed in /etc/resolv.conf. The default port is 53. Windows machines should define a forwarder to avoid 
+the default behavior.
 
 =head2 setdns
 
