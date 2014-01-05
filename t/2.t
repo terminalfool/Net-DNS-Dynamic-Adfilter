@@ -11,7 +11,7 @@ $SIG{CHLD} = 'IGNORE';
 
 my $port = int(rand(9999)) + 10000;
 
-my $adfilter = Net::DNS::Dynamic::Adfilter->new( host => '127.0.0.1', port => $port );
+my $adfilter = Net::DNS::Dynamic::Adfilter->new( host => '127.0.0.1', port => $port, nameservers => [ '8.8.8.8', '8.8.4.4' ] );
 
 my $pid = fork();
 
