@@ -1,7 +1,7 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 {{$NEXT}}
-    - configurable loopback address - feature request 90614
+    - configurable loopback address - rt 90614
 
 0.071 Tue Oct 30 09:59:26 EDT 2012
     - simplify script installation
