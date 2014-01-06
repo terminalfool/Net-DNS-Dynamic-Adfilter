@@ -257,20 +257,16 @@ Net::DNS::Dynamic::Adfilter - A DNS ad filter
 
 =head1 DESCRIPTION
 
-This is a DNS ad filter for a local area network. Its function is to load 
-lists of ad domains and nullify DNS queries for those domains to a loopback 
-address. Any other DNS queries are proxied upstream, either to a specified 
+This is an ad filter for use in a local area network. Its function is to load 
+lists of ad domains and answer DNS queries for those domains with a loopback 
+address. Any other DNS queries are forwarded upstream, either to a specified 
 list of nameservers or to those listed in /etc/resolv.conf. 
 
 The module loads externally maintained lists of ad hosts intended for use 
 by the I<adblock plus> Firefox extension. Use of the lists focuses only on 
 third-party listings that define dedicated advertising and tracking hosts.
 
-A collection of lists is available at http://adblockplus.org/en/subscriptions. 
-The module will accept standard or abp:subscribe? urls. You can cut and paste 
-encoded links directly.
-
-A locally maintained blacklist/whitelist can also be loaded. In this case, host 
+A custom blacklist and/or whitelist can also be loaded. In this case, host 
 listings must conform to a one host per line format.
 
 Once running, local network dns queries can be addressed to the host's ip.
@@ -310,9 +306,9 @@ a path string that defines where the module will write a local copy of
 the list; a refresh value that determines what age (in days) the local copy 
 may be before it is refreshed.
 
-There are dozens of adblock plus filters scattered throughout the internet. 
-You can load as many as you like, though one or two lists such as those listed 
-above should do.
+A collection of lists is available at http://adblockplus.org/en/subscriptions. 
+The module will accept standard or abp:subscribe? urls. You can cut and paste 
+encoded links directly.
 
 =head2 blacklist
 
@@ -335,7 +331,7 @@ A single column is the only acceptable format:
 
     my $adfilter = Net::DNS::Dynamic::Adfilter->new(
 
-        whitelist => '/var/named/whitelist',  #path to whitelist
+        whitelist => '/var/named/whitelist',  #path to exclusions
     );
 
 A path string to a single column list of hosts. These hosts will be removed from the filter.
