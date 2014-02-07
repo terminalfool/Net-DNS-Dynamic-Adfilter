@@ -1,5 +1,6 @@
 package Net::DNS::Dynamic::Adfilter;
 
+use Net::DNS 0.74;
 use Moose;
 use Sys::HostIP;
 use Capture::Tiny qw(capture);

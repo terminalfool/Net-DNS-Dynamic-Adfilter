@@ -1,7 +1,7 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 {{$NEXT}}
-    - min. perl version...
+    - require min. versions of Net::DNS and Perl
 
 0.072 Mon Jan 6 01:19:35 EST 2014
     - configurable loopback address - rt 90614
