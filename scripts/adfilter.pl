@@ -43,8 +43,8 @@ my $args = {};
 $args->{debug}		  = ($verbose ? 1 : ($debug ? 3 : 0));
 $args->{host}		  = $host if $host;
 $args->{port}		  = $port if $port;
-$args->{nameservers}	  = [ $nameserver ] if $nameserver;
-$args->{nameservers_port} = $nameserver_port if $nameserver_port;
+$args->{forwarders}	  = [ $nameserver ] if $nameserver;
+$args->{forwarders_port}  = $nameserver_port if $nameserver_port;
 $args->{setdns}	          = 1 if $setdns;
 $args->{loopback}         = $loopback if $loopback;
 $args->{adblock_stack}    = [
@@ -65,7 +65,7 @@ Net::DNS::Dynamic::Adfilter->new( $args )->run();
 
 =head1 NAME
 
-adfilter.pl - Sample script using Net::DNS::Dynamic::Adfilter
+adfilter.pl - command line stub
 
 =head1 SYNOPSIS
 
@@ -87,8 +87,6 @@ adfilter.pl [options]
 This script implements a dynamic DNS proxy server for the purpose of blocking advertisements. 
 
 =head1 CAVEATS
-
-Installation places this script in /usr/local/bin/
 
 Though the module permits the use of as many lists as you like, it should be sufficient to use one or two lists, accept the defaults and run it in the background:
 
