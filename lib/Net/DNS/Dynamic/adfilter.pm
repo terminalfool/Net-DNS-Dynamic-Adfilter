@@ -383,7 +383,7 @@ David Watson <dwatson@cpan.org>
 
 =head1 SEE ALSO
 
-Installed script: /usr/local/bin/adfilter.pl (scripts/adfilter.pl in the distribution)
+scripts/ in the distribution
 
 Net::DNS::Dynamic::Proxyserver
 
