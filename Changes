@@ -1,6 +1,9 @@
 Revision history for Perl module Net::DNS::Dynamic::Adfilter
 
 {{$NEXT}}
+    - replace stub and test scripts
+
+0.074 Tue Feb 11 01:29:16 EST 2014
     - fix timeout, test scripts
 
 0.073 Fri Feb 7 03:17:18 EST 2014
