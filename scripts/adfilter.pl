@@ -38,9 +38,10 @@ while (1) {
         alarm 0;
       }
 
-catch {
+  catch {
         die $_ unless $_ eq "alarm\n";
-        print "timed out\n";
+	kill HUP => $$;
+        print "restarted\n";
       };
 }
 
@@ -58,9 +59,7 @@ adfilter.pl - command line stub
 
 =head1 DESCRIPTION
 
-This script implements a DNS-based ad blocker. Execution is wrapped in a timeout function for the purpose of refreshing the adblock stack. 
-
-Edit the timeout, adblock_stack, blacklist and whitelist parameters to your liking.
+This script implements a DNS-based ad blocker. Execution is wrapped in a timeout function for the purpose of refreshing the adblock stack.
 
 =head1 CAVEATS
 
