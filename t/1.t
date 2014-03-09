@@ -20,7 +20,7 @@ ok( $adfilter->{host} eq $host );
 ok( $adfilter->{port} == $port );
 ok( $adfilter->{forwarders} ~~ $forwarders );
 
-my $pid = fork() unless $^O =~ /32/;
+my $pid = fork();
 
 unless ($pid) {
 
