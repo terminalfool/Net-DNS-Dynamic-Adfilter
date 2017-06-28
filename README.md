@@ -1,4 +1,4 @@
-###Net-DNS-Dynamic-Adfilter
+### Net-DNS-Dynamic-Adfilter
 
 This is a DNS server that functions as an ad blocking proxy. It loads [maintained lists](http://adblockplus.org/en/subscriptions) of ad hosts intended for use by the
 *Adblock Plus* Firefox extension.
